@@ -1,6 +1,6 @@
-# Rota Solidária
+﻿# Rota Solidária
 
-> Plataforma web open-source para coordenação de doações, logística e voluntariado em ações humanitárias.
+> Plataforma web de código aberto para uso não comercial, voltada à coordenação de doações, logística e voluntariado em ações humanitárias.
 
 ---
 
@@ -10,11 +10,11 @@ O **Rota Solidária** é uma iniciativa voluntária e sem fins lucrativos, desen
 
 A plataforma foi criada para apoiar:
 
-- **Operações emergenciais** — resposta rápida a desastres e crises
-- **Ações sociais contínuas** — coordenação de projetos de longo prazo
-- **Governança multi-nível** — administradores, gestores e voluntários com permissões bem definidas
-- **Cadeia de custódia de recursos** — rastreabilidade completa das doações
-- **Auditoria e transparência** — logs imutáveis de todas as ações
+- **Operações emergenciais** - resposta rápida a desastres e crises
+- **Ações sociais contínuas** - coordenação de projetos de longo prazo
+- **Governança multi-nível** - administradores, gestores e voluntários com permissões bem definidas
+- **Cadeia de custódia de recursos** - rastreabilidade completa das doações
+- **Auditoria e transparência** - logs imutáveis de todas as ações
 
 Não há fins lucrativos, publicidade ou monetização. Este é um projeto da comunidade, para a comunidade.
 
@@ -27,7 +27,7 @@ Não há fins lucrativos, publicidade ou monetização. Este é um projeto da co
 - Registro e rastreamento de doações de itens
 - Logística e transporte colaborativo
 - Pontos de entrega (Hubs) georreferenciados
-- Cadeia de custódia com estados: Oferecida → Coletada → Em transporte → Recebida → Distribuída
+- Cadeia de custódia com estados: Oferecida -> Coletada -> Em transporte -> Recebida -> Distribuída
 - Gestão por lotes
 - Evidências de entrega (foto única com compressão)
 - Reporte de incidentes
@@ -49,14 +49,14 @@ Não há fins lucrativos, publicidade ou monetização. Este é um projeto da co
 
 ## Documentação
 
-- [`PRD.md`](./docs/PRD.md) — Documento de Requisitos do Produto
-- [`TECHNICAL.md`](./docs/TECHNICAL.md) — Documento Técnico Inicial
+- [`PRD.md`](./docs/PRD.md) - Documento de Requisitos do Produto
+- [`TECHNICAL.md`](./docs/TECHNICAL.md) - Documento Técnico Inicial
 
 ---
 
 ## Como Contribuir
 
-Este é um projeto aberto a contribuições voluntárias.
+Este é um projeto aberto a contribuições voluntárias para uso não comercial.
 
 1. Faça um fork do repositório
 2. Crie uma branch a partir da `main`: `git checkout -b feat/sua-feature`
@@ -76,13 +76,13 @@ Projeto desenvolvido voluntariamente por:
 | Tales Giuliano Vieira | [LinkedIn](https://www.linkedin.com/in/peritotales) |
 | _Seu nome aqui_ | _Seu LinkedIn ou contato_ |
 
-> Quer fazer parte? Abra uma issue ou envie um Pull Request!
+> Quer fazer parte? Abra uma issue ou envie um Pull Request.
 
 ---
 
 ## Licença
 
-Este projeto é open-source. Licença a ser definida pelos mantenedores.
+Este projeto está licenciado sob a **PolyForm Noncommercial License 1.0.0**. Veja o arquivo [LICENSE](./LICENSE).
 
 ---
 
