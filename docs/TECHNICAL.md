@@ -4,27 +4,24 @@
 
 Modelo BaaS centrado no Supabase.
 
-```
-Web App
-  └── Supabase
-        ├── Auth
-        ├── Postgres
-        ├── Storage
-        └── Edge Functions
-```
+Web App → Supabase Auth → Postgres → Storage → Edge Functions
 
 ---
 
 ## 2. Stack Recomendada
 
 ### Frontend
+
 - React ou Next.js
 - TypeScript
 - Interface responsiva
 - Geolocation API do navegador
 
+---
+
 ### Backend
-- Supabase (PostgreSQL, Auth, Storage)
+
+- Supabase (PostgreSQL + Auth + Storage)
 - Edge Functions opcionais para lógica específica
 
 ---
@@ -34,25 +31,26 @@ Web App
 Modelo relacional com Row Level Security (RLS).
 
 Principais entidades:
-- `users`
-- `roles`
-- `projects`
-- `project_managers`
-- `needs`
-- `donations`
-- `deliveries`
-- `service_tasks`
-- `hubs`
-- `incidents`
-- `batches`
-- `audit_logs`
-- `evidence_files`
+
+- users
+- roles
+- projects
+- project_managers
+- needs
+- donations
+- deliveries
+- service_tasks
+- hubs
+- incidents
+- batches
+- audit_logs
+- evidence_files
 
 ---
 
 ## 4. Autenticação
 
-- Cadastro básico: email/senha ou telefone
+- Cadastro básico (email + senha ou telefone)
 - Perfis atribuídos por gestores ou administrador master
 - Não há auto-criação de gestores
 
@@ -63,6 +61,7 @@ Principais entidades:
 Utilizado apenas para fotos de evidência.
 
 Políticas:
+
 - Compressão obrigatória antes do upload
 - Limite de tamanho configurado
 - Proibição de vídeo e áudio
@@ -74,17 +73,18 @@ Políticas:
 Tabela append-only.
 
 Campos recomendados:
-- `id`
-- `actor_user_id`
-- `actor_role`
-- `action_type`
-- `entity_type`
-- `entity_id`
-- `before_state` (JSON)
-- `after_state` (JSON)
-- `timestamp`
-- `ip` (opcional)
-- `geo` (opcional)
+
+- id
+- actor_user_id
+- actor_role
+- action_type
+- entity_type
+- entity_id
+- before_state (JSON)
+- after_state (JSON)
+- timestamp
+- ip (opcional)
+- geo (opcional)
 
 ---
 
@@ -99,10 +99,11 @@ Campos recomendados:
 
 ## 8. Governança Open-Source
 
-Repositório no GitHub.
+Repositório público no GitHub.
 
 Regras:
-- Branch `main` protegida
+
+- Branch main protegida
 - Push direto proibido
 - Merge apenas via Pull Request aprovado
 - Revisão obrigatória por mantenedores
@@ -114,6 +115,7 @@ Regras:
 ## 9. Escalabilidade
 
 Sistema projetado para:
+
 - Baixo volume inicial
 - Crescimento progressivo
 - Infraestrutura mínima
@@ -123,9 +125,7 @@ Sistema projetado para:
 
 ## 10. Riscos Técnicos e Mitigações
 
-| Risco | Mitigação |
-|---|---|
-| Exposição de dados pessoais | RBAC + RLS |
-| Sobrecarga de storage | Compressão + limites |
-| Uso indevido | Logs + governança |
-| Conectividade limitada | Interface leve e resiliente |
+Exposição de dados pessoais → RBAC + RLS  
+Sobrecarga de storage → Compressão + limites  
+Uso indevido → Logs + governança  
+Conectividade limitada → Interface leve e resiliente  

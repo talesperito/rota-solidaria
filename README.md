@@ -49,8 +49,8 @@ Não há fins lucrativos, publicidade ou monetização. Este é um projeto da co
 
 ## Documentação
 
-- [`PRD.md`](./PRD.md) — Documento de Requisitos do Produto
-- [`TECHNICAL.md`](./TECHNICAL.md) — Documento Técnico Inicial
+- [`PRD.md`](./docs/PRD.md) — Documento de Requisitos do Produto
+- [`TECHNICAL.md`](./docs/TECHNICAL.md) — Documento Técnico Inicial
 
 ---
 
