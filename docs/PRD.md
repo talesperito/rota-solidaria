@@ -5,6 +5,7 @@
 Plataforma web open-source para coordenação eficiente, segura e rastreável de doações, logística e voluntariado em ações humanitárias, operada por entidades públicas ou privadas verificadas.
 
 Suporta:
+
 - Operações emergenciais (desastres)
 - Ações sociais contínuas
 - Governança multi-nível
@@ -18,9 +19,11 @@ Não há fins lucrativos, publicidade ou monetização.
 ## 2. Objetivos
 
 ### Objetivo principal
+
 Organizar ajuda material e humana de forma confiável, reduzindo desperdício, desorganização e riscos pessoais.
 
 ### Objetivos secundários
+
 - Permitir coordenação descentralizada por gestores locais
 - Garantir rastreabilidade das ações
 - Facilitar logística colaborativa
@@ -35,7 +38,7 @@ Organizar ajuda material e humana de forma confiável, reduzindo desperdício, d
 - Gestores Operacionais (prefeituras, ONGs etc.)
 - Voluntários (logística e serviço)
 - Doadores
-- Beneficiários (indiretos)
+- Beneficiários indiretos
 
 ---
 
@@ -44,14 +47,20 @@ Organizar ajuda material e humana de forma confiável, reduzindo desperdício, d
 ### Administrador Master
 
 Responsabilidades:
+
 - Criar e remover Gestores Operacionais
 - Criar/encerrar projetos globais
 - Acesso total a dados e logs
 - Governança do sistema
 
+---
+
 ### Gestor Operacional
 
-Responsável por um projeto ou região. Pode:
+Responsável por um projeto ou região.
+
+Pode:
+
 - Criar necessidades
 - Cadastrar pontos de entrega
 - Validar entregas
@@ -60,13 +69,17 @@ Responsável por um projeto ou região. Pode:
 - Gerenciar voluntários dentro do projeto
 
 Não pode:
+
 - Alterar configurações globais
 - Criar outros gestores
 - Apagar logs históricos
 
+---
+
 ### Voluntário Logístico
 
 Pode:
+
 - Assumir entregas ou transportes
 - Informar disponibilidade
 - Enviar prova de entrega (foto única)
@@ -74,15 +87,21 @@ Pode:
 
 Telefone obrigatório para contato externo.
 
+---
+
 ### Voluntário de Serviço
 
 Pode:
+
 - Assumir tarefas presenciais (mutirões etc.)
 - Informar datas/horários disponíveis
+
+---
 
 ### Doador
 
 Pode:
+
 - Oferecer itens ou ajuda
 - Informar quantidade, peso estimado e localização
 - Acompanhar status da doação
@@ -102,22 +121,31 @@ Pode:
 
 ### 6.1 Projetos
 
-Criados apenas pelo Administrador Master. Contêm:
+Criados apenas pelo Administrador Master.
+
+Contêm:
+
 - Nome
 - Descrição
 - Área geográfica
 - Status (ativo/inativo)
 - Gestores responsáveis
 
-### 6.2 Necessidades / Demandas
+---
 
-Criadas por Gestores. Tipos:
+### 6.2 Necessidades (Demandas)
+
+Criadas por Gestores.
+
+Tipos:
+
 - Doação material
 - Transporte/logística
 - Prestação de serviço
 - Transporte de pessoas (sensível)
 
 Campos:
+
 - Descrição
 - Categoria
 - Quantidade necessária
@@ -126,9 +154,12 @@ Campos:
 - Local de destino (GPS)
 - Status
 
+---
+
 ### 6.3 Doações de Itens
 
 Doador informa:
+
 - Tipo de item
 - Quantidade
 - Peso aproximado (opcional)
@@ -137,9 +168,12 @@ Doador informa:
 
 Sistema cria uma tarefa logística correspondente.
 
+---
+
 ### 6.4 Logística e Transporte
 
 Voluntários logísticos podem:
+
 - Visualizar demandas abertas
 - Assumir tarefas
 - Contatar envolvidos via telefone externo
@@ -147,18 +181,26 @@ Voluntários logísticos podem:
 
 Comunicação ocorre fora da plataforma.
 
+---
+
 ### 6.5 Prestação de Serviços
 
 Gestores podem criar tarefas como:
+
 - Mutirões
 - Reparos
 - Atendimento técnico
 
 Voluntários podem se inscrever informando disponibilidade.
 
+---
+
 ### 6.6 Pontos de Entrega (Hubs)
 
-Cadastrados por Gestores. Campos:
+Cadastrados por Gestores.
+
+Campos:
+
 - Nome
 - Endereço
 - Coordenadas GPS
@@ -167,22 +209,30 @@ Cadastrados por Gestores. Campos:
 - Responsável local
 - Status operacional
 
+---
+
 ### 6.7 Cadeia de Custódia de Doações
 
 Estados possíveis:
-1. Oferecida
-2. Aguardando coleta
-3. Em transporte
-4. Recebida no ponto
-5. Distribuída
-6. Encerrada
+
+1. Oferecida  
+2. Aguardando coleta  
+3. Em transporte  
+4. Recebida no ponto  
+5. Distribuída  
+6. Encerrada  
+
+---
 
 ### 6.8 Gestão por Lotes
 
 Permite:
+
 - Agrupar múltiplos itens
 - Dividir cargas
 - Redistribuir entre pontos
+
+---
 
 ### 6.9 Evidência de Entrega
 
@@ -192,9 +242,12 @@ Permite:
 - Armazenamento no Supabase Storage
 - Metadados no banco de dados
 
+---
+
 ### 6.10 Incidentes
 
 Voluntários podem reportar:
+
 - Risco
 - Bloqueio logístico
 - Falta crítica
@@ -202,13 +255,20 @@ Voluntários podem reportar:
 
 Gestores classificam e encerram.
 
+---
+
 ### 6.11 Geolocalização
 
-Captura automática quando relevante. Usada para:
+Captura automática quando relevante.
+
+Usada para:
+
 - Ofertas de doação
 - Entregas
 - Evidências
 - Incidentes
+
+---
 
 ### 6.12 Contato Telefônico
 
@@ -221,11 +281,12 @@ Captura automática quando relevante. Usada para:
 ## 7. Auditoria e Logs
 
 Sistema deve registrar:
+
 - Todas as ações relevantes
 - Usuário responsável
 - Timestamp
 - Entidade afetada
-- Estado anterior/posterior (quando aplicável)
+- Estado anterior/posterior quando aplicável
 
 Logs são imutáveis (append-only).
 
@@ -258,3 +319,4 @@ Logs são imutáveis (append-only).
 - Voluntários conseguem assumir e concluir tarefas
 - Doações são rastreáveis do início ao fim
 - Sistema mantém estabilidade com infraestrutura mínima
+
