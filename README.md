@@ -1,91 +1,34 @@
-﻿# Rota Solidária
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-> Plataforma web de código aberto para uso não comercial, voltada à coordenação de doações, logística e voluntariado em ações humanitárias.
+## Getting Started
 
----
+First, run the development server:
 
-## Sobre o Projeto
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-O **Rota Solidária** é uma iniciativa voluntária e sem fins lucrativos, desenvolvida por um grupo de desenvolvedores que acreditam que a tecnologia pode tornar a ajuda humanitária mais eficiente, segura e rastreável.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-A plataforma foi criada para apoiar:
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- **Operações emergenciais** - resposta rápida a desastres e crises
-- **Ações sociais contínuas** - coordenação de projetos de longo prazo
-- **Governança multi-nível** - administradores, gestores e voluntários com permissões bem definidas
-- **Cadeia de custódia de recursos** - rastreabilidade completa das doações
-- **Auditoria e transparência** - logs imutáveis de todas as ações
+## Learn More
 
-Não há fins lucrativos, publicidade ou monetização. Este é um projeto da comunidade, para a comunidade.
+To learn more about Next.js, take a look at the following resources:
 
----
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## Funcionalidades Principais (MVP)
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-- Cadastro e gestão de projetos humanitários
-- Perfis com controle de acesso por função (RBAC): Administrador, Gestor, Voluntário Logístico, Voluntário de Serviço e Doador
-- Registro e rastreamento de doações de itens
-- Logística e transporte colaborativo
-- Pontos de entrega (Hubs) georreferenciados
-- Cadeia de custódia com estados: Oferecida -> Coletada -> Em transporte -> Recebida -> Distribuída
-- Gestão por lotes
-- Evidências de entrega (foto única com compressão)
-- Reporte de incidentes
-- Logs de auditoria append-only
-- Conformidade com LGPD
+## Deploy on Vercel
 
----
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## Stack Tecnológica
-
-| Camada | Tecnologia |
-|---|---|
-| Frontend | React / Next.js + TypeScript |
-| Backend | Supabase (PostgreSQL + Auth + Storage) |
-| Edge Functions | Supabase Edge Functions |
-| Hospedagem | A definir |
-
----
-
-## Documentação
-
-- [`PRD.md`](./docs/PRD.md) - Documento de Requisitos do Produto
-- [`TECHNICAL.md`](./docs/TECHNICAL.md) - Documento Técnico Inicial
-
----
-
-## Como Contribuir
-
-Este é um projeto aberto a contribuições voluntárias para uso não comercial.
-
-1. Faça um fork do repositório
-2. Crie uma branch a partir da `main`: `git checkout -b feat/sua-feature`
-3. Faça suas alterações e commit
-4. Abra um Pull Request descrevendo o que foi feito
-
-> A branch `main` é protegida. Todo código deve entrar via Pull Request com revisão.
-
----
-
-## Equipe
-
-Projeto desenvolvido voluntariamente por:
-
-| Nome | Contato |
-|---|---|
-| Tales Giuliano Vieira | [LinkedIn](https://www.linkedin.com/in/peritotales) |
-| _Seu nome aqui_ | _Seu LinkedIn ou contato_ |
-
-> Quer fazer parte? Abra uma issue ou envie um Pull Request.
-
----
-
-## Licença
-
-Este projeto está licenciado sob a **PolyForm Noncommercial License 1.0.0**. Veja o arquivo [LICENSE](./LICENSE).
-
----
-
-<p align="center">
-  Feito com propósito. Sem fins lucrativos. Por pessoas, para pessoas.
-</p>
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
