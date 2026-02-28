@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/nav";
 
@@ -104,7 +105,14 @@ export default async function HomePage() {
       <div className="light-page">
         <div className="hero" style={{ paddingTop: "5rem" }}>
           <Link href="/" className="logo" style={{ justifyContent: "center", marginBottom: "2rem" }}>
-            <span className="logo-icon">RS</span>
+            <Image
+              src="/assets/branding/logo.png"
+              alt="Rota Solidária"
+              width={120}
+              height={34}
+              className="logo-image"
+              priority
+            />
             Rota Solidária
           </Link>
           <SolidarityHero />

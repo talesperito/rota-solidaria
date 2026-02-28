@@ -43,7 +43,7 @@ export default function ProfileClient({
         setLoggingOut(true);
         const supabase = createClient();
         await supabase.auth.signOut();
-        router.push("/auth/login");
+        router.push("/");
         router.refresh();
     }
 
