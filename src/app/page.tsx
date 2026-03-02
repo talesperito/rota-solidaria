@@ -93,6 +93,26 @@ const SEED_PROJECT = {
     "Central de coordenação de doações e voluntariado para ações emergenciais e contínuas na Zona da Mata/MG.",
 };
 
+function MissionBanner() {
+  return (
+    <section className="mission-banner" aria-label="Missão do projeto">
+      <div className="mission-badge-row">
+        <span className="mission-badge">100% Voluntário</span>
+        <span className="mission-badge">Sem fins lucrativos</span>
+        <span className="mission-badge">Ajuda a vítimas de desastres</span>
+      </div>
+      <h2>Nossa missão</h2>
+      <p>
+        O Rota Solidária existe para organizar ajuda humanitária com agilidade e rastreabilidade.
+        Este projeto é mantido por contribuidores voluntários e não possui finalidade comercial.
+      </p>
+      <p className="mission-note">
+        Novo por aqui? Este contexto é parte central das decisões de produto, engenharia e governança.
+      </p>
+    </section>
+  );
+}
+
 export default async function HomePage() {
   const supabase = await createClient();
   const {
@@ -129,6 +149,7 @@ export default async function HomePage() {
               Criar Conta
             </Link>
           </div>
+          <MissionBanner />
         </div>
       </div>
     );
@@ -198,6 +219,10 @@ export default async function HomePage() {
         <p style={{ color: "var(--color-text-muted)", fontSize: "0.9375rem", marginBottom: "0.25rem" }}>
           Acompanhe e participe das operações humanitárias em andamento.
         </p>
+      </div>
+
+      <div className="page-container" style={{ maxWidth: 900, paddingTop: "0.5rem", paddingBottom: "0.5rem" }}>
+        <MissionBanner />
       </div>
 
       {/* Error alert */}
