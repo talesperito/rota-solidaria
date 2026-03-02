@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -41,11 +42,18 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="page-center">
+        <div className="page-center light-page">
             <div className="card">
                 <div className="card-header">
                     <Link href="/" className="logo">
-                        <span className="logo-icon">RS</span>
+                        <Image
+                            src="/assets/branding/logo.png"
+                            alt="Rota Solidária"
+                            width={120}
+                            height={34}
+                            className="logo-image"
+                            priority
+                        />
                         Rota Solidária
                     </Link>
                     <h1>Entrar</h1>

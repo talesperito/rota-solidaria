@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
@@ -85,11 +86,18 @@ export default function RegisterPage() {
 
     if (success) {
         return (
-            <div className="page-center">
+            <div className="page-center light-page">
                 <div className="card">
                     <div className="card-header">
                         <Link href="/" className="logo">
-                            <span className="logo-icon">RS</span>
+                            <Image
+                                src="/assets/branding/logo.png"
+                                alt="Rota Solidária"
+                                width={120}
+                                height={34}
+                                className="logo-image"
+                                priority
+                            />
                             Rota Solidária
                         </Link>
                         <h1>Conta criada!</h1>
@@ -106,11 +114,18 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="page-center">
+        <div className="page-center light-page">
             <div className="card">
                 <div className="card-header">
                     <Link href="/" className="logo">
-                        <span className="logo-icon">RS</span>
+                        <Image
+                            src="/assets/branding/logo.png"
+                            alt="Rota Solidária"
+                            width={120}
+                            height={34}
+                            className="logo-image"
+                            priority
+                        />
                         Rota Solidária
                     </Link>
                     <h1>Criar Conta</h1>
