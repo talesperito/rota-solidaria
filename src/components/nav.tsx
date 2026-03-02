@@ -46,6 +46,8 @@ export default function Nav({ userName, isMaster }: NavProps) {
 
                 <div className="nav-links">
                     <Link href="/" className="nav-link">Projetos</Link>
+                    <Link href="/about" className="nav-link">Sobre</Link>
+                    <Link href="/support" className="nav-link">Suporte</Link>
                     {isMaster && <Link href="/admin" className="nav-link">Admin</Link>}
                     <span className="nav-user">Bem-vindo, {userName}</span>
                     <button
@@ -80,6 +82,17 @@ export default function Nav({ userName, isMaster }: NavProps) {
                     <Link href="/" className="mobile-menu-item" onClick={() => setMenuOpen(false)}>
                         Projetos
                     </Link>
+                    <Link href="/about" className="mobile-menu-item" onClick={() => setMenuOpen(false)}>
+                        Sobre
+                    </Link>
+                    <Link href="/support" className="mobile-menu-item" onClick={() => setMenuOpen(false)}>
+                        Suporte
+                    </Link>
+                    {isMaster && (
+                        <Link href="/admin" className="mobile-menu-item" onClick={() => setMenuOpen(false)}>
+                            Admin
+                        </Link>
+                    )}
 
                     <button type="button" className="mobile-menu-logout" onClick={handleLogout}>
                         Sair
