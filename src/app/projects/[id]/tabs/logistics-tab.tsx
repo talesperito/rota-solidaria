@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Delivery {
@@ -47,7 +47,7 @@ const STATUS_GROUPS = [
 ];
 
 export default function LogisticsTab({ projectId, canManage, userId }: LogisticsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
             setDeliveries((data as unknown as Delivery[]) ?? []);
         }
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, supabase]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchDeliveries(); }, [fetchDeliveries]);

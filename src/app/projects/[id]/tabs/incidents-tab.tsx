@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Incident {
@@ -66,7 +66,7 @@ const EMPTY_FORM = {
 };
 
 export default function IncidentsTab({ projectId, canManage, userId }: IncidentsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -103,7 +103,7 @@ export default function IncidentsTab({ projectId, canManage, userId }: Incidents
             setIncidents((data as unknown as Incident[]) ?? []);
         }
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, supabase]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
