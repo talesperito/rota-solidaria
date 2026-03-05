@@ -22,7 +22,13 @@ interface Donation {
 }
 
 interface Hub { id: string; name: string; }
-interface Need { id: string; title: string; category: string; }
+interface Need {
+    id: string;
+    title: string;
+    category: string;
+    quantity_needed: number;
+    unit: string;
+}
 
 interface DonationsTabProps {
     projectId: string;
@@ -66,6 +72,10 @@ const selectStyle = {
     fontFamily: "inherit", fontSize: "0.9375rem", color: "var(--color-text)",
 };
 
+function getCategoryLabel(category: string): string {
+    return CATEGORIES.find((c) => c.value === category)?.label ?? category;
+}
+
 export default function DonationsTab({ projectId, canManage, userId }: DonationsTabProps) {
     const supabase = useMemo(() => createClient(), []);
     const [donations, setDonations] = useState<Donation[]>([]);
@@ -103,7 +113,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                 .order("name"),
             supabase
                 .from("needs")
-                .select("id, title, category")
+                .select("id, title, category, quantity_needed, unit")
                 .eq("project_id", projectId)
                 .in("status", ["open", "in_progress"])
                 .order("created_at", { ascending: false }),
@@ -161,22 +171,63 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         setSaving(true);
         setError(null);
 
+        const quantity = parseInt(form.quantity);
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            setError("Informe uma quantidade válida.");
+            setSaving(false);
+            return;
+        }
+
+        if (!form.need_id) {
+            setError("Selecione uma demanda ativa para registrar a doação.");
+            setSaving(false);
+            return;
+        }
+
+        const selectedNeed = activeNeeds.find((n) => n.id === form.need_id);
+        if (!selectedNeed) {
+            setError("A demanda selecionada não está ativa.");
+            setSaving(false);
+            return;
+        }
+
+        if (quantity > selectedNeed.remaining) {
+            setError(`Quantidade acima do restante da demanda. Restam ${selectedNeed.remaining} ${selectedNeed.unit}.`);
+            setSaving(false);
+            return;
+        }
+
+        if (form.category !== selectedNeed.category) {
+            setError(`A categoria deve ser "${getCategoryLabel(selectedNeed.category)}" para esta demanda.`);
+            setSaving(false);
+            return;
+        }
+
         const { error: err } = await supabase.from("donations").insert({
             project_id: projectId,
             donor_id: userId,
             category: form.category,
             item_description: form.item_description.trim(),
-            quantity: parseInt(form.quantity),
+            quantity,
             unit: form.unit.trim(),
             approx_weight: form.approx_weight ? parseFloat(form.approx_weight) : null,
-            need_id: form.need_id || null,
+            need_id: form.need_id,
             hub_id: form.hub_id || null,
             donor_lat: geoLat,
             donor_lng: geoLng,
         });
 
         if (err) {
-            setError(`Erro ao registrar doação: ${err.message}`);
+            const message = err.message.toLowerCase();
+            if (message.includes("demanda") && message.includes("ativa")) {
+                setError("Não foi possível registrar: a demanda não está mais ativa.");
+            } else if (message.includes("restante") || message.includes("excede")) {
+                setError("Não foi possível registrar: a quantidade excede o restante da demanda.");
+            } else if (message.includes("categoria")) {
+                setError("Não foi possível registrar: a categoria da doação deve ser igual à categoria da demanda.");
+            } else {
+                setError(`Erro ao registrar doação: ${err.message}`);
+            }
             console.error("[DONATION CREATE ERROR]", err);
         } else {
             setSuccess("Doação registrada com sucesso! Obrigado pela solidariedade. 💙");
@@ -209,6 +260,26 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         if (filterStatus !== "all" && d.status !== filterStatus) return false;
         return true;
     });
+    const donatedByNeed = donations.reduce<Record<string, number>>((acc, d) => {
+        if (!d.need_id || d.status === "cancelled") return acc;
+        acc[d.need_id] = (acc[d.need_id] ?? 0) + d.quantity;
+        return acc;
+    }, {});
+    const activeNeeds = needs
+        .map((n) => ({
+            ...n,
+            donated: donatedByNeed[n.id] ?? 0,
+            remaining: Math.max(0, n.quantity_needed - (donatedByNeed[n.id] ?? 0)),
+        }))
+        .filter((n) => n.remaining > 0);
+    const hasActiveNeeds = activeNeeds.length > 0;
+    const selectedNeed = activeNeeds.find((n) => n.id === form.need_id);
+    const requestedQuantity = parseInt(form.quantity);
+    const quantityExceedsNeed =
+        Number.isFinite(requestedQuantity)
+        && requestedQuantity > 0
+        && !!selectedNeed
+        && requestedQuantity > selectedNeed.remaining;
 
     if (loading) {
         return (
@@ -227,13 +298,22 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
             <div className="admin-section">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <h2 style={{ fontSize: "1.125rem", fontWeight: 600, margin: 0 }}>Doações</h2>
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setShowForm(!showForm)}
+                        disabled={!hasActiveNeeds}
+                    >
                         {showForm ? "Cancelar" : "🤲 Doar"}
                     </button>
                 </div>
                 <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem", marginTop: "0.5rem" }}>
                     Ofertas de itens para atender as demandas do projeto. Doações são rastreadas desde a oferta até a entrega.
                 </p>
+                {!hasActiveNeeds && (
+                    <p style={{ color: "var(--color-text-muted)", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                        Não há demandas ativas no momento. O gestor precisa abrir uma demanda para receber doações.
+                    </p>
+                )}
 
                 {/* Donation Form */}
                 {showForm && (
@@ -241,15 +321,42 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                             <div className="form-group">
                                 <label>Categoria *</label>
-                                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} style={selectStyle}>
+                                <select
+                                    value={form.category}
+                                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                    style={selectStyle}
+                                    disabled={!!selectedNeed}
+                                >
                                     {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                                 </select>
+                                {selectedNeed && (
+                                    <small style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
+                                        Categoria definida pela demanda selecionada.
+                                    </small>
+                                )}
                             </div>
                             <div className="form-group">
-                                <label>Vincular a demanda</label>
-                                <select value={form.need_id} onChange={(e) => setForm({ ...form, need_id: e.target.value })} style={selectStyle}>
-                                    <option value="">Nenhuma (doação livre)</option>
-                                    {needs.map((n) => <option key={n.id} value={n.id}>{n.title}</option>)}
+                                <label>Demanda ativa *</label>
+                                <select
+                                    value={form.need_id}
+                                    onChange={(e) => {
+                                        const nextNeedId = e.target.value;
+                                        const nextNeed = activeNeeds.find((n) => n.id === nextNeedId);
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            need_id: nextNeedId,
+                                            category: nextNeed?.category ?? prev.category,
+                                        }));
+                                    }}
+                                    style={selectStyle}
+                                    required
+                                >
+                                    <option value="" disabled>Selecione uma demanda</option>
+                                    {activeNeeds.map((n) => (
+                                        <option key={n.id} value={n.id}>
+                                            {n.title} ({getCategoryLabel(n.category)}) - Restam {n.remaining} {n.unit}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="form-group" style={{ gridColumn: "1 / -1" }}>
@@ -259,6 +366,11 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                             <div className="form-group">
                                 <label>Quantidade *</label>
                                 <input type="number" min="1" placeholder="20" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} required />
+                                {quantityExceedsNeed && (
+                                    <small style={{ color: "var(--color-danger)", fontSize: "0.75rem" }}>
+                                        Excede a demanda selecionada. Restam {selectedNeed?.remaining} {selectedNeed?.unit}.
+                                    </small>
+                                )}
                             </div>
                             <div className="form-group">
                                 <label>Unidade *</label>
@@ -304,7 +416,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                             </p>
                         </div>
 
-                        <button type="submit" className="btn btn-primary" disabled={saving} style={{ marginTop: "0.75rem", width: "auto" }}>
+                        <button type="submit" className="btn btn-primary" disabled={saving || !hasActiveNeeds || !form.need_id || quantityExceedsNeed} style={{ marginTop: "0.75rem", width: "auto" }}>
                             {saving ? <span className="spinner" /> : "Registrar Doação"}
                         </button>
                     </form>

@@ -22,6 +22,12 @@ interface Hub {
     name: string;
 }
 
+interface DonationSummary {
+    need_id: string | null;
+    quantity: number;
+    status: string;
+}
+
 interface NeedsTabProps {
     projectId: string;
     canManage: boolean;
@@ -68,6 +74,7 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
     const supabase = useMemo(() => createClient(), []);
     const [needs, setNeeds] = useState<Need[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
+    const [deliveredByNeed, setDeliveredByNeed] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -85,7 +92,7 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
 
     const fetchData = useCallback(async () => {
 
-        const [needsRes, hubsRes] = await Promise.all([
+        const [needsRes, hubsRes, donationsRes] = await Promise.all([
             supabase
                 .from("needs")
                 .select("id, title, description, category, quantity_needed, unit, priority, due_date, status, hub_id, hubs(name)")
@@ -97,6 +104,11 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                 .eq("project_id", projectId)
                 .eq("status", "active")
                 .order("name"),
+            supabase
+                .from("donations")
+                .select("need_id, quantity, status")
+                .eq("project_id", projectId)
+                .not("need_id", "is", null),
         ]);
 
         if (needsRes.error) {
@@ -106,6 +118,17 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
             setNeeds((needsRes.data as unknown as Need[]) ?? []);
         }
         setHubs(hubsRes.data ?? []);
+        if (donationsRes.error) {
+            setDeliveredByNeed({});
+            console.error("[DONATIONS SUMMARY ERROR]", donationsRes.error);
+        } else {
+            const deliveredMap: Record<string, number> = {};
+            for (const row of (donationsRes.data as DonationSummary[]) ?? []) {
+                if (!row.need_id || row.status !== "delivered") continue;
+                deliveredMap[row.need_id] = (deliveredMap[row.need_id] ?? 0) + row.quantity;
+            }
+            setDeliveredByNeed(deliveredMap);
+        }
         setLoading(false);
     }, [projectId, supabase]);
 
@@ -349,7 +372,10 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                 </div>
             ) : (
                 <div style={{ display: "grid", gap: "0.75rem" }}>
-                    {filtered.map((need) => (
+                    {filtered.map((need) => {
+                        const delivered = deliveredByNeed[need.id] ?? 0;
+                        const remaining = Math.max(0, need.quantity_needed - delivered);
+                        return (
                         <div key={need.id} className="admin-section" style={{ marginBottom: 0 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem" }}>
                                 <div style={{ flex: 1 }}>
@@ -364,7 +390,9 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                     )}
                                     <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
                                         <span>{CATEGORIES.find(c => c.value === need.category)?.label ?? need.category}</span>
-                                        <span>📊 {need.quantity_needed} {need.unit}</span>
+                                        <span>📊 Total: {need.quantity_needed} {need.unit}</span>
+                                        <span>✅ Entregues: {delivered} {need.unit}</span>
+                                        <span>📦 Restantes: {remaining} {need.unit}</span>
                                         {need.hubs && <span>📍 {need.hubs.name}</span>}
                                         {need.due_date && <span>📅 {new Date(need.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
                                     </div>
@@ -391,7 +419,8 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                 </div>
                             )}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </>
