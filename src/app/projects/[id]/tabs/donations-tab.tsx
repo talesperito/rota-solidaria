@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Donation {
@@ -67,7 +67,7 @@ const selectStyle = {
 };
 
 export default function DonationsTab({ projectId, canManage, userId }: DonationsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [donations, setDonations] = useState<Donation[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [needs, setNeeds] = useState<Need[]>([]);
@@ -118,7 +118,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         setHubs(hubsRes.data ?? []);
         setNeeds((needsRes.data as unknown as Need[]) ?? []);
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, supabase]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData(); }, [fetchData]);

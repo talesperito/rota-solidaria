@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Registration {
@@ -54,7 +54,7 @@ const EMPTY_FORM = {
 };
 
 export default function ShiftsPanel({ projectId, canManage, userId }: ShiftsPanelProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [shifts, setShifts] = useState<Shift[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ export default function ShiftsPanel({ projectId, canManage, userId }: ShiftsPane
         }
         setHubs(hubsRes.data ?? []);
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, supabase]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData(); }, [fetchData]);

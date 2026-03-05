@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Project {
@@ -17,7 +17,7 @@ interface Manager {
 }
 
 export default function AdminClient({ userId }: { userId: string }) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [name, setName] = useState("");
@@ -38,7 +38,7 @@ export default function AdminClient({ userId }: { userId: string }) {
             .select("id, name, description, status")
             .order("created_at", { ascending: false });
         setProjects(data ?? []);
-    }, []);
+    }, [supabase]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
