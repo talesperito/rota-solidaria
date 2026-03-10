@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface ProfileClientProps {
@@ -80,6 +80,7 @@ export default function ProfileClient({
             setSaving(false);
             return;
         }
+        
 
         const supabase = createClient();
         const { error: err } = await supabase
