@@ -180,7 +180,7 @@ export default function MembersPanel({ projectId, canManage, isMaster, userId }:
         }
     }
 
-    const showPhone = canManage;
+    // Phone visibility: manager sees full number only if member gave consent
 
     if (loading) {
         return (
@@ -260,7 +260,12 @@ export default function MembersPanel({ projectId, canManage, isMaster, userId }:
                                     </div>
                                     <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                                         <span>✉ {m.email}</span>
-                                        <span>📞 {showPhone ? (m.phone ?? "—") : maskPhone(m.phone)}</span>
+                                        {canManage && m.phone_consent
+                                            ? <span title="Compartilhamento autorizado">📞 {m.phone ?? "—"}</span>
+                                            : canManage && !m.phone_consent
+                                                ? <span style={{ color: "var(--color-text-muted)" }} title="Membro não autorizou compartilhamento de telefone">📞 {maskPhone(m.phone)} <small>(sem consentimento)</small></span>
+                                                : <span>📞 {maskPhone(m.phone)}</span>
+                                        }
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>

@@ -7,6 +7,7 @@ import DonationsTab from "./tabs/donations-tab";
 import LogisticsTab from "./tabs/logistics-tab";
 import IncidentsTab from "./tabs/incidents-tab";
 import VolunteersTab from "./tabs/volunteers-tab";
+import OverviewTab from "./tabs/overview-tab";
 
 interface ProjectTabsProps {
     projectId: string;
@@ -53,7 +54,7 @@ export default function ProjectTabs({
 
             {/* Tab Content */}
             <div className="tab-content">
-                {activeTab === "overview" && <OverviewTab />}
+                {activeTab === "overview" && <OverviewTab projectId={projectId} canManage={canManage} />}
                 {activeTab === "hubs" && (
                     <HubsTab projectId={projectId} canManage={canManage} userId={userId} />
                 )}
@@ -77,15 +78,4 @@ export default function ProjectTabs({
     );
 }
 
-function OverviewTab() {
-    return (
-        <div className="admin-section" style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📊</p>
-            <h2 style={{ fontSize: "1.125rem", marginBottom: "0.5rem" }}>Visão Geral</h2>
-            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-                Resumo do projeto incluindo estatísticas de hubs, doações e entregas será exibido aqui.
-            </p>
-        </div>
-    );
-}
 

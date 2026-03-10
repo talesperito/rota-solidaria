@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function RegisterPage() {
     const [fullName, setFullName] = useState("");
     const [phone, setPhone] = useState("");
+    const [phoneConsent, setPhoneConsent] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -67,7 +68,7 @@ export default function RegisterPage() {
                     id: authData.user.id,
                     full_name: fullName.trim(),
                     phone: phoneValue,
-                    phone_consent: false,
+                    phone_consent: phoneConsent,
                 });
 
             if (profileError) {
@@ -163,6 +164,22 @@ export default function RegisterPage() {
                             Apenas números. O +55 é adicionado automaticamente.
                         </small>
                     </div>
+
+                    {phone.trim() && (
+                        <div className="form-group">
+                            <label style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", cursor: "pointer", fontWeight: "normal" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={phoneConsent}
+                                    onChange={(e) => setPhoneConsent(e.target.checked)}
+                                    style={{ marginTop: "0.2rem", flexShrink: 0 }}
+                                />
+                                <span style={{ fontSize: "0.8125rem" }}>
+                                    Autorizo o compartilhamento do meu telefone com gestores e voluntários logísticos para coordenação das entregas (LGPD — art. 7º, II).
+                                </span>
+                            </label>
+                        </div>
+                    )}
 
                     <div className="form-group">
                         <label htmlFor="email">Email</label>

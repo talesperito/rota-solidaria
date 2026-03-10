@@ -30,11 +30,12 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Protect /me and /admin routes — redirect to login if no session
+    // Protect authenticated routes — redirect to login if no session
     if (
         !user &&
         (request.nextUrl.pathname.startsWith("/me") ||
-            request.nextUrl.pathname.startsWith("/admin"))
+            request.nextUrl.pathname.startsWith("/admin") ||
+            request.nextUrl.pathname.startsWith("/projects"))
     ) {
         const url = request.nextUrl.clone();
         url.pathname = "/auth/login";

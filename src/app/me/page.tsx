@@ -22,9 +22,11 @@ export default async function MePage() {
 
     return (
         <ProfileClient
+            userId={user.id}
             email={user.email ?? ""}
             fullName={profile?.full_name ?? "—"}
-            phone={profile?.phone ?? "—"}
+            phone={profile?.phone ?? null}
+            phoneConsent={profile?.phone_consent ?? false}
             createdAt={profile?.created_at ?? ""}
         />
     );

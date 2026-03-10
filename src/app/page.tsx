@@ -149,6 +149,12 @@ export default async function HomePage() {
               Criar Conta
             </Link>
           </div>
+          <p style={{ marginTop: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+            Quer ver o que está sendo arrecadado?{" "}
+            <Link href="/projetos" style={{ color: "var(--color-primary)" }}>
+              Ver operações ativas →
+            </Link>
+          </p>
           <MissionBanner />
         </div>
       </div>

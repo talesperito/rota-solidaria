@@ -91,6 +91,7 @@ git checkout -b feat/nome-da-feature
 2. Faca commits claros e objetivos.
 3. Abra Pull Request com revisao obrigatoria.
 4. Descreva no PR:
+
 - Escopo
 - Impactos tecnicos
 - Como validar
@@ -133,9 +134,9 @@ git checkout -b feat/nome-da-feature
 
 Projeto desenvolvido voluntariamente por:
 
-| Nome | Contato |
-|---|---|
-| Tales Giuliano Vieira | [LinkedIn](https://www.linkedin.com/in/peritotales) |
+| Nome                          | Contato                                                 |
+| ----------------------------- | ------------------------------------------------------- |
+| Tales Giuliano Vieira         | [LinkedIn](https://www.linkedin.com/in/peritotales)     |
 | Joao Victor Nazareth de Souza | [LinkedIn](https://www.linkedin.com/in/dev-joao-victor) |
 
 ### Licenca
@@ -225,6 +226,7 @@ git checkout -b feat/feature-name
 2. Make clear and focused commits.
 3. Open a Pull Request with mandatory review.
 4. Include in the PR:
+
 - Scope
 - Technical impacts
 - Validation steps
@@ -267,10 +269,11 @@ git checkout -b feat/feature-name
 
 Project developed voluntarily by:
 
-| Name | Contact |
-|---|---|
-| Tales Giuliano Vieira | [LinkedIn](https://www.linkedin.com/in/peritotales) |
+| Name                          | Contact                                                 |
+| ----------------------------- | ------------------------------------------------------- |
+| Tales Giuliano Vieira         | [LinkedIn](https://www.linkedin.com/in/peritotales)     |
 | Joao Victor Nazareth de Souza | [LinkedIn](https://www.linkedin.com/in/dev-joao-victor) |
+| Yan Carlos Silva Amorim       | [Contato Empresa](65 99612-8425)                        |
 
 ### License
 
@@ -359,6 +362,7 @@ git checkout -b feat/nombre-de-feature
 2. Haz commits claros y objetivos.
 3. Abre un Pull Request con revision obligatoria.
 4. Incluye en el PR:
+
 - Alcance
 - Impactos tecnicos
 - Pasos de validacion
@@ -401,10 +405,11 @@ git checkout -b feat/nombre-de-feature
 
 Proyecto desarrollado de forma voluntaria por:
 
-| Nombre | Contacto |
-|---|---|
-| Tales Giuliano Vieira | [LinkedIn](https://www.linkedin.com/in/peritotales) |
+| Nombre                        | Contacto                                                |
+| ----------------------------- | ------------------------------------------------------- |
+| Tales Giuliano Vieira         | [LinkedIn](https://www.linkedin.com/in/peritotales)     |
 | Joao Victor Nazareth de Souza | [LinkedIn](https://www.linkedin.com/in/dev-joao-victor) |
+| Yan Carlos Silva Amorim       | [Contato Empresa](65 99612-8425)                        |
 
 ### Licencia
 
