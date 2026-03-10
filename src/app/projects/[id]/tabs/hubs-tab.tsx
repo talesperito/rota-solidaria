@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
+
+const HubsMap = dynamic(() => import("@/components/hubs-map"), { ssr: false });
 
 interface Hub {
     id: string;
@@ -272,6 +275,24 @@ export default function HubsTab({ projectId, canManage, userId }: HubsTabProps) 
                     <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem" }}>
                         Locais físicos onde doações são recebidas, armazenadas e distribuídas.
                     </p>
+                </div>
+            )}
+
+            {/* Map overview when hubs have GPS coordinates */}
+            {hubs.length > 0 && (
+                <div className="admin-section" style={{ marginBottom: "0.75rem" }}>
+                    <HubsMap
+                        hubs={hubs
+                            .filter((h) => h.gps_lat !== null && h.gps_lng !== null)
+                            .map((h) => ({
+                                id: h.id,
+                                name: h.name,
+                                address: h.address,
+                                gps_lat: h.gps_lat!,
+                                gps_lng: h.gps_lng!,
+                                status: h.status,
+                            }))}
+                    />
                 </div>
             )}
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import imageCompression from "browser-image-compression";
 
 interface Delivery {
     id: string;
@@ -11,7 +12,9 @@ interface Delivery {
     assigned_at: string | null;
     delivered_at: string | null;
     validated_at: string | null;
+    distributed_at: string | null;
     notes: string | null;
+    evidence_photo_url: string | null;
     created_at: string;
     donations: {
         item_description: string;
@@ -21,6 +24,7 @@ interface Delivery {
         donor_lat: number | null;
         donor_lng: number | null;
         hubs: { name: string } | null;
+        donor: { full_name: string; phone: string | null; phone_consent: boolean } | null;
     } | null;
     volunteer: { full_name: string } | null;
 }
@@ -37,6 +41,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string
     in_transit: { label: "Em transporte", color: "#d97706", icon: "🚛" },
     delivered: { label: "Entregue", color: "#059669", icon: "📦" },
     validated: { label: "Validada", color: "#047857", icon: "✅" },
+    distributed: { label: "Distribuída", color: "#0f766e", icon: "🤲" },
     cancelled: { label: "Cancelada", color: "#6b7280", icon: "✕" },
 };
 
@@ -46,6 +51,16 @@ const STATUS_GROUPS = [
     { key: "completed", title: "Concluídas", empty: "" },
 ];
 
+
+const EVIDENCE_BUCKET = "delivery-evidence";
+const MAX_PHOTO_MB = 2;
+const COMPRESSION_OPTIONS = {
+    maxSizeMB: MAX_PHOTO_MB,
+    maxWidthOrHeight: 1280,
+    useWebWorker: true,
+    fileType: "image/jpeg" as const,
+};
+
 export default function LogisticsTab({ projectId, canManage, userId }: LogisticsTabProps) {
     const supabase = useMemo(() => createClient(), []);
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -54,16 +69,21 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
     const [success, setSuccess] = useState<string | null>(null);
     const [activeGroup, setActiveGroup] = useState("available");
 
-    const fetchDeliveries = useCallback(async () => {
+    // Evidence photo upload state
+    const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const pendingDeliveryId = useRef<string | null>(null);
 
+    const fetchDeliveries = useCallback(async () => {
         const { data, error: err } = await supabase
             .from("deliveries")
             .select(`
-        id, donation_id, logistics_volunteer_id, status,
-        assigned_at, delivered_at, validated_at, notes, created_at,
-        donations(item_description, category, quantity, unit, donor_lat, donor_lng, hubs(name)),
-        volunteer:user_profiles!deliveries_logistics_volunteer_id_fkey(full_name)
-      `)
+                id, donation_id, logistics_volunteer_id, status,
+                assigned_at, delivered_at, validated_at, distributed_at, notes, evidence_photo_url, created_at,
+                donations(item_description, category, quantity, unit, donor_lat, donor_lng, hubs(name), donor:user_profiles!donations_donor_id_fkey(full_name, phone, phone_consent)),
+                volunteer:user_profiles!deliveries_logistics_volunteer_id_fkey(full_name)
+            `)
             .eq("project_id", projectId)
             .order("created_at", { ascending: false });
 
@@ -76,12 +96,15 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
         setLoading(false);
     }, [projectId, supabase]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    useEffect(() => { fetchDeliveries(); }, [fetchDeliveries]);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchDeliveries();
+    }, [fetchDeliveries]);
+
 
     useEffect(() => {
         if (success) {
-            const t = setTimeout(() => setSuccess(null), 3000);
+            const t = setTimeout(() => setSuccess(null), 3500);
             return () => clearTimeout(t);
         }
     }, [success]);
@@ -114,6 +137,7 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
         if (newStatus === "in_transit") update.notes = null;
         if (newStatus === "delivered") update.delivered_at = new Date().toISOString();
         if (newStatus === "validated") update.validated_at = new Date().toISOString();
+        if (newStatus === "distributed") update.distributed_at = new Date().toISOString();
 
         const { error: err } = await supabase
             .from("deliveries")
@@ -134,11 +158,77 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
         await handleUpdateStatus(deliveryId, "cancelled");
     }
 
+    // Trigger file picker for evidence photo
+    function triggerEvidenceUpload(deliveryId: string) {
+        pendingDeliveryId.current = deliveryId;
+        fileInputRef.current?.click();
+    }
+
+    // Handle file selection → compress → upload → update delivery
+    async function handleEvidenceFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        const deliveryId = pendingDeliveryId.current;
+        if (!file || !deliveryId) return;
+
+        // Reset input so same file can be re-selected
+        e.target.value = "";
+
+        if (!file.type.startsWith("image/")) {
+            setError("Apenas imagens são permitidas como evidência.");
+            return;
+        }
+
+        setUploadingFor(deliveryId);
+        setError(null);
+
+        try {
+            setUploadProgress("Comprimindo imagem...");
+            const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+
+            setUploadProgress("Enviando foto...");
+            const ext = "jpg";
+            const path = `${projectId}/${deliveryId}/${Date.now()}.${ext}`;
+
+            const { error: uploadErr } = await supabase.storage
+                .from(EVIDENCE_BUCKET)
+                .upload(path, compressed, {
+                    contentType: "image/jpeg",
+                    upsert: true,
+                });
+
+            if (uploadErr) {
+                throw new Error(uploadErr.message);
+            }
+
+            const { data: urlData } = supabase.storage
+                .from(EVIDENCE_BUCKET)
+                .getPublicUrl(path);
+
+            setUploadProgress("Salvando referência...");
+            const { error: updateErr } = await supabase
+                .from("deliveries")
+                .update({ evidence_photo_url: urlData.publicUrl })
+                .eq("id", deliveryId);
+
+            if (updateErr) throw new Error(updateErr.message);
+
+            setSuccess("Foto de evidência enviada com sucesso! 📸");
+            await fetchDeliveries();
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : "Erro desconhecido";
+            setError(`Erro ao enviar foto: ${msg}`);
+            console.error("[EVIDENCE UPLOAD ERROR]", err);
+        } finally {
+            setUploadingFor(null);
+            setUploadProgress(null);
+            pendingDeliveryId.current = null;
+        }
+    }
+
     // Group deliveries
     const available = deliveries.filter((d) => d.status === "available");
     const active = deliveries.filter((d) => ["assigned", "in_transit", "delivered"].includes(d.status));
-    const completed = deliveries.filter((d) => ["validated", "cancelled"].includes(d.status));
-
+    const completed = deliveries.filter((d) => ["validated", "distributed", "cancelled"].includes(d.status));
     const groups: Record<string, Delivery[]> = { available, active, completed };
 
     if (loading) {
@@ -151,17 +241,28 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
 
     return (
         <>
+            {/* Hidden file input for evidence photos */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={handleEvidenceFileChange}
+            />
+
             {error && <div className="alert alert-error">{error}</div>}
             {success && <div className="alert alert-success">{success}</div>}
 
             {/* Header */}
             <div className="admin-section">
-                <h2 style={{ fontSize: "1.125rem", fontWeight: 600, margin: 0 }}>Logística</h2>
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem", marginTop: "0.5rem" }}>
-                    Entregas são criadas automaticamente quando uma doação é aceita pelo gestor. Voluntários logísticos podem assumir e transportar.
-                </p>
+                <div>
+                    <h2 style={{ fontSize: "1.125rem", fontWeight: 600, margin: 0 }}>Logística</h2>
+                    <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem", marginTop: "0.5rem" }}>
+                        Entregas são criadas automaticamente quando uma doação é aceita pelo gestor. Voluntários logísticos podem assumir e transportar.
+                    </p>
+                </div>
 
-                {/* Stats */}
+                {/* Group tabs */}
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap" }}>
                     {STATUS_GROUPS.map((g) => (
                         <button
@@ -209,7 +310,6 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
                         <div key={d.id} className="admin-section" style={{ marginBottom: 0 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem" }}>
                                 <div style={{ flex: 1 }}>
-                                    {/* Item info */}
                                     <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.375rem" }}>
                                         {d.donations?.item_description ?? "Doação"}
                                     </h3>
@@ -220,9 +320,15 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
                                             <span>🌐 Origem: {d.donations.donor_lat.toFixed(3)}, {d.donations.donor_lng.toFixed(3)}</span>
                                         )}
                                         {d.volunteer && <span>🙋 {d.volunteer.full_name}</span>}
+                                        {d.donations?.donor && (
+                                            d.donations.donor.phone_consent && d.donations.donor.phone
+                                                ? <span title="Contato do doador">📞 {d.donations.donor.full_name}: {d.donations.donor.phone}</span>
+                                                : <span style={{ color: "var(--color-text-muted)" }} title="Doador não autorizou compartilhamento de telefone">📞 {d.donations.donor.full_name} (sem contato autorizado)</span>
+                                        )}
                                         {d.assigned_at && <span>📅 Assumida: {new Date(d.assigned_at).toLocaleDateString("pt-BR")}</span>}
                                         {d.delivered_at && <span>📦 Entregue: {new Date(d.delivered_at).toLocaleDateString("pt-BR")}</span>}
                                         {d.validated_at && <span>✅ Validada: {new Date(d.validated_at).toLocaleDateString("pt-BR")}</span>}
+                                        {d.distributed_at && <span>🤲 Distribuída: {new Date(d.distributed_at).toLocaleDateString("pt-BR")}</span>}
                                     </div>
                                 </div>
                                 <span style={{
@@ -235,6 +341,37 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
                                     {STATUS_CONFIG[d.status]?.icon} {STATUS_CONFIG[d.status]?.label}
                                 </span>
                             </div>
+
+                            {/* Evidence photo thumbnail */}
+                            {d.evidence_photo_url && (
+                                <div style={{ marginTop: "0.75rem" }}>
+                                    <a href={d.evidence_photo_url} target="_blank" rel="noopener noreferrer">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={d.evidence_photo_url}
+                                            alt="Evidência de entrega"
+                                            style={{
+                                                width: 80, height: 80,
+                                                objectFit: "cover",
+                                                borderRadius: "var(--radius)",
+                                                border: "1px solid var(--color-border)",
+                                                cursor: "pointer",
+                                            }}
+                                        />
+                                    </a>
+                                    <p style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                                        📸 Foto de evidência anexada
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Upload progress */}
+                            {uploadingFor === d.id && (
+                                <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    <span className="spinner" style={{ borderColor: "rgba(0,0,0,0.1)", borderTopColor: "var(--color-primary)", width: 14, height: 14, flexShrink: 0 }} />
+                                    {uploadProgress}
+                                </div>
+                            )}
 
                             {/* Actions */}
                             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
@@ -252,10 +389,35 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
                                     </button>
                                 )}
 
-                                {/* Volunteer: mark delivered */}
+                                {/* Volunteer: mark delivered + upload evidence */}
                                 {d.status === "in_transit" && d.logistics_volunteer_id === userId && (
-                                    <button className="expand-btn" onClick={() => handleUpdateStatus(d.id, "delivered")}>
-                                        📦 Entreguei
+                                    <>
+                                        <button
+                                            className="expand-btn"
+                                            onClick={() => triggerEvidenceUpload(d.id)}
+                                            disabled={uploadingFor === d.id}
+                                            title={`Enviar foto de evidência (máx. ${MAX_PHOTO_MB}MB)`}
+                                        >
+                                            📸 {d.evidence_photo_url ? "Atualizar foto" : "Adicionar foto"}
+                                        </button>
+                                        <button
+                                            className="expand-btn"
+                                            onClick={() => handleUpdateStatus(d.id, "delivered")}
+                                            disabled={uploadingFor === d.id}
+                                        >
+                                            📦 Entreguei
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Allow evidence upload also on delivered status (before validation) */}
+                                {d.status === "delivered" && d.logistics_volunteer_id === userId && !canManage && (
+                                    <button
+                                        className="expand-btn"
+                                        onClick={() => triggerEvidenceUpload(d.id)}
+                                        disabled={uploadingFor === d.id}
+                                    >
+                                        📸 {d.evidence_photo_url ? "Atualizar foto" : "Adicionar foto"}
                                     </button>
                                 )}
 
@@ -266,8 +428,15 @@ export default function LogisticsTab({ projectId, canManage, userId }: Logistics
                                     </button>
                                 )}
 
+                                {/* Manager: mark as distributed to beneficiary */}
+                                {d.status === "validated" && canManage && (
+                                    <button className="btn btn-primary btn-sm" onClick={() => handleUpdateStatus(d.id, "distributed")}>
+                                        🤲 Distribuída ao beneficiário
+                                    </button>
+                                )}
+
                                 {/* Manager: cancel */}
-                                {canManage && !["validated", "cancelled"].includes(d.status) && (
+                                {canManage && !["validated", "distributed", "cancelled"].includes(d.status) && (
                                     <button className="expand-btn" style={{ color: "var(--color-danger)" }} onClick={() => handleCancel(d.id)}>
                                         ✕ Cancelar
                                     </button>

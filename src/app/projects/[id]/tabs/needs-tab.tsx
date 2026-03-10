@@ -14,6 +14,8 @@ interface Need {
     due_date: string | null;
     status: string;
     hub_id: string | null;
+    dest_lat: number | null;
+    dest_lng: number | null;
     hubs: { name: string } | null;
 }
 
@@ -68,11 +70,15 @@ const EMPTY_FORM = {
     priority: "medium",
     due_date: "",
     hub_id: "",
+    dest_lat: "",
+    dest_lng: "",
 };
 
 export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps) {
     const supabase = useMemo(() => createClient(), []);
     const [needs, setNeeds] = useState<Need[]>([]);
+    const [geoLoading, setGeoLoading] = useState(false);
+    const [geoError, setGeoError] = useState<string | null>(null);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [deliveredByNeed, setDeliveredByNeed] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
@@ -95,7 +101,7 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
         const [needsRes, hubsRes, donationsRes] = await Promise.all([
             supabase
                 .from("needs")
-                .select("id, title, description, category, quantity_needed, unit, priority, due_date, status, hub_id, hubs(name)")
+                .select("id, title, description, category, quantity_needed, unit, priority, due_date, status, hub_id, dest_lat, dest_lng, hubs(name)")
                 .eq("project_id", projectId)
                 .order("created_at", { ascending: false }),
             supabase
@@ -157,6 +163,8 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
             priority: form.priority,
             due_date: form.due_date || null,
             hub_id: form.hub_id || null,
+            dest_lat: form.dest_lat ? parseFloat(form.dest_lat) : null,
+            dest_lng: form.dest_lng ? parseFloat(form.dest_lng) : null,
             created_by: userId,
         };
 
@@ -208,8 +216,39 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
             priority: need.priority,
             due_date: need.due_date ?? "",
             hub_id: need.hub_id ?? "",
+            dest_lat: need.dest_lat?.toString() ?? "",
+            dest_lng: need.dest_lng?.toString() ?? "",
         });
+        setGeoError(null);
         setShowForm(true);
+    }
+
+    function requestGeolocation() {
+        if (!navigator.geolocation) {
+            setGeoError("Geolocalização não suportada pelo navegador.");
+            return;
+        }
+        setGeoLoading(true);
+        setGeoError(null);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setForm((prev) => ({
+                    ...prev,
+                    dest_lat: pos.coords.latitude.toString(),
+                    dest_lng: pos.coords.longitude.toString(),
+                }));
+                setGeoLoading(false);
+            },
+            (err) => {
+                setGeoError(
+                    err.code === 1
+                        ? "Permissão de localização negada."
+                        : "Não foi possível obter a localização."
+                );
+                setGeoLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
 
     async function handleStatusChange(needId: string, newStatus: string) {
@@ -315,6 +354,30 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                 <label>Prazo</label>
                                 <input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
                             </div>
+                            <div className="form-group">
+                                <label>Latitude do destino (GPS)</label>
+                                <input type="text" placeholder="-20.761" value={form.dest_lat} onChange={(e) => setForm({ ...form, dest_lat: e.target.value })} />
+                            </div>
+                            <div className="form-group">
+                                <label>Longitude do destino (GPS)</label>
+                                <input type="text" placeholder="-42.882" value={form.dest_lng} onChange={(e) => setForm({ ...form, dest_lng: e.target.value })} />
+                            </div>
+                            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", padding: "0.625rem 0.875rem", background: "var(--color-surface-hover)", borderRadius: "var(--radius)", fontSize: "0.8125rem" }}>
+                                    <div>
+                                        <strong>📍 Usar minha localização atual</strong>
+                                        {form.dest_lat && form.dest_lng && (
+                                            <span style={{ color: "var(--color-text-muted)", marginLeft: "0.5rem" }}>
+                                                {parseFloat(form.dest_lat).toFixed(4)}, {parseFloat(form.dest_lng).toFixed(4)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button type="button" className="expand-btn" onClick={requestGeolocation} disabled={geoLoading} style={{ marginTop: 0 }}>
+                                        {geoLoading ? "Obtendo..." : form.dest_lat ? "✓ Atualizar" : "Capturar"}
+                                    </button>
+                                </div>
+                                {geoError && <p style={{ color: "var(--color-danger)", fontSize: "0.75rem", marginTop: "0.25rem" }}>{geoError}</p>}
+                            </div>
                             <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                                 <label>Descrição</label>
                                 <input type="text" placeholder="Detalhes adicionais sobre a necessidade" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -388,14 +451,33 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                     {need.description && (
                                         <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginBottom: "0.375rem" }}>{need.description}</p>
                                     )}
-                                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+                                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: "0.625rem" }}>
                                         <span>{CATEGORIES.find(c => c.value === need.category)?.label ?? need.category}</span>
-                                        <span>📊 Total: {need.quantity_needed} {need.unit}</span>
-                                        <span>✅ Entregues: {delivered} {need.unit}</span>
-                                        <span>📦 Restantes: {remaining} {need.unit}</span>
                                         {need.hubs && <span>📍 {need.hubs.name}</span>}
+                                        {need.dest_lat && need.dest_lng && <span>🌐 {need.dest_lat.toFixed(4)}, {need.dest_lng.toFixed(4)}</span>}
                                         {need.due_date && <span>📅 {new Date(need.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
                                     </div>
+                                    {/* Progress bar */}
+                                    {need.status !== "cancelled" && (() => {
+                                        const pct = need.quantity_needed > 0 ? Math.min(100, Math.round((delivered / need.quantity_needed) * 100)) : 0;
+                                        const barColor = pct >= 100 ? "#059669" : pct > 0 ? "#d97706" : "var(--color-border)";
+                                        return (
+                                            <div>
+                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.6875rem", color: "var(--color-text-muted)", marginBottom: "0.25rem" }}>
+                                                    <span>{delivered} {need.unit} entregues de {need.quantity_needed} {need.unit}</span>
+                                                    <span style={{ fontWeight: 600, color: pct >= 100 ? "#059669" : "var(--color-text-muted)" }}>{pct}%</span>
+                                                </div>
+                                                <div style={{ height: 6, borderRadius: 999, background: "var(--color-border)", overflow: "hidden" }}>
+                                                    <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 999, transition: "width 0.4s ease" }} />
+                                                </div>
+                                                {remaining > 0 && need.status !== "fulfilled" && (
+                                                    <p style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
+                                                        Faltam {remaining} {need.unit}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                                 <span style={{ fontSize: "0.6875rem", fontWeight: 600, padding: "0.25rem 0.625rem", borderRadius: 999, background: `${STATUSES[need.status]?.color}18`, color: STATUSES[need.status]?.color, whiteSpace: "nowrap", flexShrink: 0 }}>
                                     {STATUSES[need.status]?.label}
