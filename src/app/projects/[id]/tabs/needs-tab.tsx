@@ -11,6 +11,8 @@ interface Need {
     quantity_needed: number;
     quantity_received: number;
     quantity_remaining: number;
+    quantity_committed: number;
+    quantity_available: number;
     unit: string;
     priority: string;
     due_date: string | null;
@@ -98,7 +100,7 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
         const [needsRes, hubsRes] = await Promise.all([
             supabase
                 .from("needs")
-                .select("id, title, description, category, quantity_needed, quantity_received, quantity_remaining, unit, priority, due_date, status, hub_id, hubs(name)")
+                .select("id, title, description, category, quantity_needed, quantity_received, quantity_remaining, quantity_committed, quantity_available, unit, priority, due_date, status, hub_id, hubs(name)")
                 .eq("project_id", projectId)
                 .order("created_at", { ascending: false }),
             supabase
@@ -251,6 +253,11 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
     function getProgress(need: Need) {
         if (need.quantity_needed <= 0) return 0;
         return Math.min((need.quantity_received / need.quantity_needed) * 100, 100);
+    }
+
+    function getCommitmentProgress(need: Need) {
+        if (need.quantity_needed <= 0) return 0;
+        return Math.min((need.quantity_committed / need.quantity_needed) * 100, 100);
     }
 
     if (loading) {
@@ -510,6 +517,8 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                     <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
                                         <span>{CATEGORIES.find((category) => category.value === need.category)?.label ?? need.category}</span>
                                         <span>Original: {need.quantity_needed} {need.unit}</span>
+                                        <span>Comprometido: {need.quantity_committed} {need.unit}</span>
+                                        <span>Disponivel: {need.quantity_available} {need.unit}</span>
                                         <span>Recebido: {need.quantity_received} {need.unit}</span>
                                         <span>Restante: {need.quantity_remaining} {need.unit}</span>
                                         {need.hubs && <span>Hub: {need.hubs.name}</span>}
@@ -528,15 +537,37 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                         >
                                             <div
                                                 style={{
-                                                    width: `${getProgress(need)}%`,
+                                                    width: `${getCommitmentProgress(need)}%`,
                                                     height: "100%",
-                                                    background: need.quantity_remaining === 0 ? "#059669" : "var(--color-primary)",
+                                                    background: "var(--color-primary)",
                                                     transition: "width var(--transition)",
                                                 }}
                                             />
                                         </div>
                                         <p style={{ marginTop: "0.375rem", fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>
-                                            {getProgress(need).toFixed(0)}% atendido
+                                            {getCommitmentProgress(need).toFixed(0)}% comprometido
+                                        </p>
+                                    </div>
+                                    <div style={{ marginTop: "0.5rem" }}>
+                                        <div
+                                            style={{
+                                                height: 8,
+                                                borderRadius: 999,
+                                                background: "var(--color-surface-hover)",
+                                                overflow: "hidden",
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: `${getProgress(need)}%`,
+                                                    height: "100%",
+                                                    background: need.quantity_remaining === 0 ? "#059669" : "#d97706",
+                                                    transition: "width var(--transition)",
+                                                }}
+                                            />
+                                        </div>
+                                        <p style={{ marginTop: "0.375rem", fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>
+                                            {getProgress(need).toFixed(0)}% recebido (validado)
                                         </p>
                                     </div>
                                 </div>
@@ -561,16 +592,6 @@ export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps
                                     <button className="expand-btn" onClick={() => startEdit(need)}>
                                         Editar
                                     </button>
-                                    {need.status === "open" && (
-                                        <button className="expand-btn" onClick={() => handleStatusChange(need.id, "in_progress")}>
-                                            Iniciar
-                                        </button>
-                                    )}
-                                    {need.status === "in_progress" && (
-                                        <button className="expand-btn" onClick={() => handleStatusChange(need.id, "fulfilled")}>
-                                            Marcar atendida
-                                        </button>
-                                    )}
                                     {need.status !== "cancelled" && need.status !== "fulfilled" && (
                                         <button className="expand-btn" onClick={() => handleStatusChange(need.id, "cancelled")}>
                                             Cancelar

@@ -33,6 +33,8 @@ interface Need {
     quantity_needed: number;
     quantity_received: number;
     quantity_remaining: number;
+    quantity_committed: number;
+    quantity_available: number;
     unit: string;
 }
 
@@ -83,11 +85,7 @@ const selectStyle = {
     color: "var(--color-text)",
 };
 
-export default function DonationsTab({
-    projectId,
-    canManage,
-    userId,
-}: DonationsTabProps) {
+export default function DonationsTab({ projectId, canManage, userId }: DonationsTabProps) {
     const supabase = createClient();
     const [donations, setDonations] = useState<Donation[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
@@ -121,7 +119,7 @@ export default function DonationsTab({
                 .order("name"),
             supabase
                 .from("needs")
-                .select("id, title, category, quantity_needed, quantity_received, quantity_remaining, unit")
+                .select("id, title, category, quantity_needed, quantity_received, quantity_remaining, quantity_committed, quantity_available, unit")
                 .eq("project_id", projectId)
                 .in("status", ["open", "in_progress"])
                 .order("created_at", { ascending: false }),
@@ -143,7 +141,6 @@ export default function DonationsTab({
         async function loadData() {
             await fetchData();
         }
-
         void loadData();
     }, [fetchData]);
 
@@ -182,15 +179,38 @@ export default function DonationsTab({
         );
     }
 
+    const selectedNeed = needs.find((need) => need.id === form.need_id) ?? null;
+
+    const quantityValue = parseInt(form.quantity);
+    const quantityIsValid = Number.isFinite(quantityValue) && quantityValue > 0;
+    const withinAvailable = !!selectedNeed && quantityIsValid && quantityValue <= selectedNeed.quantity_available;
+
+    const isFormReady =
+        !!selectedNeed &&
+        form.item_description.trim().length >= 2 &&
+        quantityIsValid &&
+        withinAvailable &&
+        form.unit.trim().length > 0;
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
         setError(null);
 
-        const selectedNeed = needs.find((need) => need.id === form.need_id);
-
         if (!selectedNeed) {
             setError("Selecione uma demanda aberta para registrar a doacao.");
+            setSaving(false);
+            return;
+        }
+
+        if (!quantityIsValid) {
+            setError("Informe uma quantidade valida.");
+            setSaving(false);
+            return;
+        }
+
+        if (!withinAvailable) {
+            setError("Quantidade excede o saldo disponivel da demanda.");
             setSaving(false);
             return;
         }
@@ -200,7 +220,7 @@ export default function DonationsTab({
             donor_id: userId,
             category: selectedNeed.category,
             item_description: form.item_description.trim(),
-            quantity: parseInt(form.quantity),
+            quantity: quantityValue,
             unit: form.unit.trim(),
             approx_weight: form.approx_weight ? parseFloat(form.approx_weight) : null,
             need_id: selectedNeed.id,
@@ -226,7 +246,6 @@ export default function DonationsTab({
 
     async function handleStatusChange(donationId: string, newStatus: string) {
         setError(null);
-
         const { error: err } = await supabase
             .from("donations")
             .update({ status: newStatus })
@@ -245,13 +264,6 @@ export default function DonationsTab({
         if (filterStatus !== "all" && donation.status !== filterStatus) return false;
         return true;
     });
-
-    const selectedNeed = needs.find((need) => need.id === form.need_id) ?? null;
-    const isFormReady =
-        !!selectedNeed &&
-        form.item_description.trim().length >= 2 &&
-        Number(form.quantity) > 0 &&
-        form.unit.trim().length > 0;
 
     if (loading) {
         return (
@@ -282,7 +294,7 @@ export default function DonationsTab({
                     </button>
                 </div>
                 <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem", marginTop: "0.5rem" }}>
-                    Cada doacao precisa atender uma demanda aberta pelo gestor. O fluxo segue da oferta ate a coleta, entrega e validacao.
+                    Cada doacao precisa atender uma demanda aberta pelo gestor. O sistema bloqueia doacoes acima do saldo disponivel.
                 </p>
 
                 {showForm && (
@@ -303,13 +315,12 @@ export default function DonationsTab({
                                     value={form.need_id}
                                     onChange={(e) => {
                                         const needId = e.target.value;
-                                        const selectedNeed = needs.find((need) => need.id === needId);
-
+                                        const pickedNeed = needs.find((need) => need.id === needId);
                                         setForm({
                                             ...form,
                                             need_id: needId,
-                                            category: selectedNeed?.category ?? EMPTY_FORM.category,
-                                            unit: selectedNeed?.unit ?? EMPTY_FORM.unit,
+                                            category: pickedNeed?.category ?? EMPTY_FORM.category,
+                                            unit: pickedNeed?.unit ?? EMPTY_FORM.unit,
                                         });
                                     }}
                                     style={selectStyle}
@@ -352,6 +363,7 @@ export default function DonationsTab({
                                 <input
                                     type="number"
                                     min="1"
+                                    max={selectedNeed?.quantity_available ?? undefined}
                                     placeholder="Informe quanto voce vai doar"
                                     value={form.quantity}
                                     onChange={(e) => setForm({ ...form, quantity: e.target.value })}
@@ -359,7 +371,7 @@ export default function DonationsTab({
                                 />
                                 {selectedNeed && (
                                     <small style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
-                                        Demanda original: {selectedNeed.quantity_needed} {selectedNeed.unit}. Recebido: {selectedNeed.quantity_received} {selectedNeed.unit}. Restante: {selectedNeed.quantity_remaining} {selectedNeed.unit}.
+                                        Original: {selectedNeed.quantity_needed} {selectedNeed.unit}. Comprometido: {selectedNeed.quantity_committed} {selectedNeed.unit}. Disponivel: {selectedNeed.quantity_available} {selectedNeed.unit}. Recebido: {selectedNeed.quantity_received} {selectedNeed.unit}.
                                     </small>
                                 )}
                             </div>
@@ -372,10 +384,7 @@ export default function DonationsTab({
                                     value={form.unit}
                                     readOnly
                                     required
-                                    style={{
-                                        background: "var(--color-surface-hover)",
-                                        cursor: "not-allowed",
-                                    }}
+                                    style={{ background: "var(--color-surface-hover)", cursor: "not-allowed" }}
                                 />
                             </div>
 
@@ -417,51 +426,23 @@ export default function DonationsTab({
                                 fontSize: "0.8125rem",
                             }}
                         >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    flexWrap: "wrap",
-                                    gap: "0.5rem",
-                                }}
-                            >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
                                 <div>
                                     <strong>Sua localizacao</strong>
                                     <span style={{ color: "var(--color-text-muted)", marginLeft: "0.5rem" }}>
-                                        {geoLat && geoLng
-                                            ? `${geoLat.toFixed(4)}, ${geoLng.toFixed(4)}`
-                                            : "Nao informada"}
+                                        {geoLat && geoLng ? `${geoLat.toFixed(4)}, ${geoLng.toFixed(4)}` : "Nao informada"}
                                     </span>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="expand-btn"
-                                    onClick={requestGeolocation}
-                                    disabled={geoLoading}
-                                    style={{ marginTop: 0 }}
-                                >
+                                <button type="button" className="expand-btn" onClick={requestGeolocation} disabled={geoLoading} style={{ marginTop: 0 }}>
                                     {geoLoading ? "Obtendo..." : geoLat ? "Atualizar" : "Usar minha localizacao"}
                                 </button>
                             </div>
                             {geoError && (
-                                <p
-                                    style={{
-                                        color: "var(--color-danger)",
-                                        marginTop: "0.375rem",
-                                        fontSize: "0.75rem",
-                                    }}
-                                >
+                                <p style={{ color: "var(--color-danger)", marginTop: "0.375rem", fontSize: "0.75rem" }}>
                                     {geoError}
                                 </p>
                             )}
-                            <p
-                                style={{
-                                    color: "var(--color-text-muted)",
-                                    marginTop: "0.25rem",
-                                    fontSize: "0.6875rem",
-                                }}
-                            >
+                            <p style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", fontSize: "0.6875rem" }}>
                                 Ajuda voluntarios logisticos a planejar a coleta. Opcional e com seu consentimento.
                             </p>
                         </div>
@@ -469,15 +450,15 @@ export default function DonationsTab({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={saving || needs.length === 0 || !isFormReady}
+                            disabled={saving || needs.length === 0 || !isFormReady || (selectedNeed?.quantity_available ?? 0) === 0}
                             style={{
                                 marginTop: "0.75rem",
                                 width: "auto",
-                                opacity: saving || needs.length === 0 || !isFormReady ? 0.55 : 1,
-                                cursor: saving || needs.length === 0 || !isFormReady ? "not-allowed" : "pointer",
+                                opacity: saving || needs.length === 0 || !isFormReady || (selectedNeed?.quantity_available ?? 0) === 0 ? 0.55 : 1,
+                                cursor: saving || needs.length === 0 || !isFormReady || (selectedNeed?.quantity_available ?? 0) === 0 ? "not-allowed" : "pointer",
                             }}
                         >
-                            {saving ? <span className="spinner" /> : "Registrar doação"}
+                            {saving ? <span className="spinner" /> : "Registrar doacao"}
                         </button>
                     </form>
                 )}
@@ -545,49 +526,17 @@ export default function DonationsTab({
                 <div style={{ display: "grid", gap: "0.75rem" }}>
                     {filtered.map((donation) => (
                         <div key={donation.id} className="admin-section" style={{ marginBottom: 0 }}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "flex-start",
-                                    gap: "0.75rem",
-                                }}
-                            >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem" }}>
                                 <div style={{ flex: 1 }}>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "0.5rem",
-                                            marginBottom: "0.375rem",
-                                            flexWrap: "wrap",
-                                        }}
-                                    >
-                                        <h3 style={{ fontSize: "1rem", fontWeight: 600, margin: 0 }}>
-                                            {donation.item_description}
-                                        </h3>
-                                    </div>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            gap: "1rem",
-                                            flexWrap: "wrap",
-                                            fontSize: "0.75rem",
-                                            color: "var(--color-text-muted)",
-                                        }}
-                                    >
-                                        <span>
-                                            {CATEGORIES.find((category) => category.value === donation.category)?.label ??
-                                                donation.category}
-                                        </span>
+                                    <h3 style={{ fontSize: "1rem", fontWeight: 600, margin: 0 }}>{donation.item_description}</h3>
+                                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
+                                        <span>{CATEGORIES.find((category) => category.value === donation.category)?.label ?? donation.category}</span>
                                         <span>{donation.quantity} {donation.unit}</span>
                                         {donation.approx_weight && <span>~{donation.approx_weight}kg</span>}
                                         {donation.needs && <span>Demanda: {donation.needs.title}</span>}
                                         {donation.hubs && <span>Hub: {donation.hubs.name}</span>}
                                         {donation.donor_lat && donation.donor_lng && (
-                                            <span>
-                                                Origem: {donation.donor_lat.toFixed(3)}, {donation.donor_lng.toFixed(3)}
-                                            </span>
+                                            <span>Origem: {donation.donor_lat.toFixed(3)}, {donation.donor_lng.toFixed(3)}</span>
                                         )}
                                         <span>{new Date(donation.created_at).toLocaleDateString("pt-BR")}</span>
                                     </div>
@@ -611,26 +560,17 @@ export default function DonationsTab({
                             {canManage && (
                                 <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
                                     {donation.status === "offered" && (
-                                        <button
-                                            className="expand-btn"
-                                            onClick={() => handleStatusChange(donation.id, "accepted")}
-                                        >
+                                        <button className="expand-btn" onClick={() => handleStatusChange(donation.id, "accepted")}>
                                             Aceitar
                                         </button>
                                     )}
                                     {donation.status === "accepted" && (
-                                        <button
-                                            className="expand-btn"
-                                            onClick={() => handleStatusChange(donation.id, "in_transit")}
-                                        >
+                                        <button className="expand-btn" onClick={() => handleStatusChange(donation.id, "in_transit")}>
                                             Em transporte
                                         </button>
                                     )}
                                     {donation.status === "in_transit" && (
-                                        <button
-                                            className="expand-btn"
-                                            onClick={() => handleStatusChange(donation.id, "delivered")}
-                                        >
+                                        <button className="expand-btn" onClick={() => handleStatusChange(donation.id, "delivered")}>
                                             Entregue
                                         </button>
                                     )}
@@ -647,13 +587,7 @@ export default function DonationsTab({
                             )}
 
                             {!canManage && donation.donor_id === userId && (
-                                <p
-                                    style={{
-                                        fontSize: "0.6875rem",
-                                        color: "var(--color-text-muted)",
-                                        marginTop: "0.5rem",
-                                    }}
-                                >
+                                <p style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
                                     Sua doacao
                                 </p>
                             )}

@@ -156,6 +156,8 @@ Campos principais:
 - Descricao
 - Categoria
 - Quantidade necessaria
+- Quantidade comprometida
+- Quantidade disponivel
 - Quantidade recebida
 - Quantidade restante
 - Unidade
