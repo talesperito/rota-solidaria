@@ -1,18 +1,18 @@
-# PRD — Sistema de Coordenação de Doações e Voluntariado
+# PRD - Sistema de Coordenacao de Doacoes e Voluntariado
 
-## 1. Visão do Produto
+## 1. Visao do Produto
 
-Plataforma web open-source para coordenação eficiente, segura e rastreável de doações, logística e voluntariado em ações humanitárias, operada por entidades públicas ou privadas verificadas.
+Plataforma web open-source para coordenacao eficiente, segura e rastreavel de doacoes, logistica e voluntariado em acoes humanitarias.
 
-Suporta:
+O produto existe para apoiar operacoes reais, com foco em:
 
-- Operações emergenciais (desastres)
-- Ações sociais contínuas
-- Governança multi-nível
-- Cadeia de custódia de recursos
-- Auditoria completa
+- Resposta a desastres
+- Acoes sociais continuas
+- Governanca clara
+- Cadeia de custodia das doacoes
+- Auditoria operacional
 
-Não há fins lucrativos, publicidade ou monetização.
+O projeto nao possui fins lucrativos, publicidade ou monetizacao.
 
 ---
 
@@ -20,81 +20,87 @@ Não há fins lucrativos, publicidade ou monetização.
 
 ### Objetivo principal
 
-Organizar ajuda material e humana de forma confiável, reduzindo desperdício, desorganização e riscos pessoais.
+Organizar ajuda material e humana de forma confiavel, reduzindo desperdicio, desorganizacao e risco operacional.
 
-### Objetivos secundários
+### Objetivos secundarios
 
-- Permitir coordenação descentralizada por gestores locais
-- Garantir rastreabilidade das ações
-- Facilitar logística colaborativa
-- Minimizar exposição de dados pessoais
-- Operar com baixo custo e infraestrutura mínima
+- Garantir que as doacoes atendam necessidades reais do projeto
+- Permitir operacao descentralizada com controle central de governanca
+- Facilitar a logistica colaborativa
+- Minimizar exposicao de dados pessoais
+- Operar com baixo custo e infraestrutura simples
 
 ---
 
 ## 3. Stakeholders
 
-- Administrador Master (global)
-- Gestores Operacionais (prefeituras, ONGs etc.)
-- Voluntários (logística e serviço)
-- Doadores
-- Beneficiários indiretos
+- Administrador Master
+- Gestor Operacional do Projeto
+- Voluntario Logistico
+- Voluntario de Servico
+- Doador
+- Beneficiarios indiretos
 
 ---
 
-## 4. Perfis de Usuário (RBAC)
+## 4. Perfis de Usuario (RBAC)
 
 ### Administrador Master
 
 Responsabilidades:
 
-- Criar e remover Gestores Operacionais
-- Criar/encerrar projetos globais
-- Acesso total a dados e logs
-- Governança do sistema
+- Criar projetos
+- Encerrar projetos
+- Vincular gestores operacionais aos projetos
+- Acessar dados e logs globais
+- Manter a governanca do sistema
+
+Observacao:
+
+- O Administrador Master sera operado pela equipe mantenedora e desenvolvedora do sistema.
 
 ---
 
 ### Gestor Operacional
 
-Responsável por um projeto ou região.
+Responsavel por executar a operacao de um projeto especifico.
 
 Pode:
 
-- Criar necessidades
-- Cadastrar pontos de entrega
-- Validar entregas
-- Encerrar demandas
-- Visualizar dados operacionais
-- Gerenciar voluntários dentro do projeto
+- Cadastrar demandas
+- Cadastrar hubs e pontos de recebimento
+- Acompanhar doacoes do projeto
+- Validar recebimentos e entregas
+- Gerenciar voluntarios do proprio projeto
 
-Não pode:
+Nao pode:
 
-- Alterar configurações globais
+- Criar projetos
 - Criar outros gestores
-- Apagar logs históricos
+- Alterar configuracoes globais
+- Apagar historico de auditoria
 
 ---
 
-### Voluntário Logístico
+### Voluntario Logistico
 
 Pode:
 
-- Assumir entregas ou transportes
+- Assumir coletas e entregas
 - Informar disponibilidade
-- Enviar prova de entrega (foto única)
+- Atualizar andamento da entrega
 - Reportar incidentes
 
-Telefone obrigatório para contato externo.
+Telefone obrigatorio para contato operacional externo quando aplicavel.
 
 ---
 
-### Voluntário de Serviço
+### Voluntario de Servico
 
 Pode:
 
-- Assumir tarefas presenciais (mutirões etc.)
-- Informar datas/horários disponíveis
+- Assumir tarefas presenciais
+- Informar datas e horarios disponiveis
 
 ---
 
@@ -102,17 +108,22 @@ Pode:
 
 Pode:
 
-- Oferecer itens ou ajuda
-- Informar quantidade, peso estimado e localização
-- Acompanhar status da doação
+- Oferecer itens para demandas abertas
+- Informar quantidade, peso estimado e localizacao
+- Acompanhar o status da propria doacao
+
+Nao pode:
+
+- Criar demandas
+- Fazer doacao livre fora das demandas abertas pelo gestor
 
 ---
 
 ## 5. Plataforma
 
-- Aplicação web responsiva
+- Aplicacao web responsiva
 - Uso em desktop e mobile via navegador
-- Arquitetura preparada para PWA futura
+- Preparacao para PWA futura
 - Sem app nativo no MVP
 
 ---
@@ -121,202 +132,195 @@ Pode:
 
 ### 6.1 Projetos
 
-Criados apenas pelo Administrador Master.
+Projetos sao criados apenas pelo Administrador Master.
 
-Contêm:
+Campos principais:
 
 - Nome
-- Descrição
-- Área geográfica
-- Status (ativo/inativo)
-- Gestores responsáveis
+- Descricao
+- Area geografica
+- Status
+- Gestores responsaveis
 
 ---
 
-### 6.2 Necessidades (Demandas)
+### 6.2 Demandas
 
-Criadas por Gestores.
+Demandas sao criadas pelo Gestor Operacional do projeto.
 
-Tipos:
+A demanda e a origem do fluxo operacional de doacao.
 
-- Doação material
-- Transporte/logística
-- Prestação de serviço
-- Transporte de pessoas (sensível)
+Campos principais:
 
-Campos:
-
-- Descrição
+- Titulo
+- Descricao
 - Categoria
-- Quantidade necessária
+- Quantidade necessaria
+- Quantidade comprometida
+- Quantidade disponivel
+- Quantidade recebida
+- Quantidade restante
+- Unidade
 - Prioridade
 - Prazo
-- Local de destino (GPS)
+- Hub de destino
 - Status
 
 ---
 
-### 6.3 Doações de Itens
+### 6.3 Doacoes de Itens
 
-Doador informa:
+O doador so pode registrar doacao vinculada a uma demanda aberta ou em andamento.
 
-- Tipo de item
+Dados informados pelo doador:
+
+- Descricao do item
 - Quantidade
-- Peso aproximado (opcional)
-- Localização automática (GPS)
-- Disponibilidade de retirada
+- Unidade
+- Peso aproximado
+- Localizacao de coleta
+- Hub de destino, quando houver
 
-Sistema cria uma tarefa logística correspondente.
+Regras:
 
----
-
-### 6.4 Logística e Transporte
-
-Voluntários logísticos podem:
-
-- Visualizar demandas abertas
-- Assumir tarefas
-- Contatar envolvidos via telefone externo
-- Registrar conclusão
-
-Comunicação ocorre fora da plataforma.
+- Nao existe doacao livre fora de demanda
+- Toda doacao deve estar vinculada a uma demanda do projeto
+- A doacao entra no fluxo logistico apos aceite do gestor
 
 ---
 
-### 6.5 Prestação de Serviços
+### 6.4 Logistica e Transporte
+
+Quando uma doacao e aceita pelo gestor, o sistema cria a entrega correspondente.
+
+Fluxo operacional esperado:
+
+1. Doador oferece item para uma demanda
+2. Gestor aceita a doacao
+3. Entrega fica disponivel para voluntario logistico
+4. Voluntario assume a coleta e atualiza o transporte
+5. Gestor valida o recebimento no destino
+
+O produto deve suportar evolucao futura para consolidacao de multiplas coletas em um mesmo trajeto.
+
+---
+
+### 6.5 Prestacao de Servicos
 
 Gestores podem criar tarefas como:
 
-- Mutirões
+- Mutiroes
 - Reparos
-- Atendimento técnico
+- Atendimento tecnico
 
-Voluntários podem se inscrever informando disponibilidade.
+Voluntarios podem se inscrever informando disponibilidade.
 
 ---
 
-### 6.6 Pontos de Entrega (Hubs)
+### 6.6 Hubs e Pontos de Recebimento
 
-Cadastrados por Gestores.
+Cadastrados por Gestores Operacionais.
 
-Campos:
+Campos principais:
 
 - Nome
-- Endereço
+- Endereco
 - Coordenadas GPS
-- Capacidade (opcional)
-- Horário de funcionamento
-- Responsável local
+- Capacidade opcional
+- Horario de funcionamento
+- Responsavel local
 - Status operacional
 
 ---
 
-### 6.7 Cadeia de Custódia de Doações
+### 6.7 Cadeia de Custodia de Doacoes
 
-Estados possíveis:
+Estados principais do fluxo:
 
-1. Oferecida  
-2. Aguardando coleta  
-3. Em transporte  
-4. Recebida no ponto  
-5. Distribuída  
-6. Encerrada  
-
----
-
-### 6.8 Gestão por Lotes
-
-Permite:
-
-- Agrupar múltiplos itens
-- Dividir cargas
-- Redistribuir entre pontos
+1. Oferecida
+2. Aceita
+3. Disponivel para coleta
+4. Em transporte
+5. Entregue
+6. Validada
 
 ---
 
-### 6.9 Evidência de Entrega
+### 6.8 Incidentes
 
-- Máximo de 1 foto por entrega
-- Compressão obrigatória no cliente
-- Sem vídeo ou áudio
-- Armazenamento no Supabase Storage
-- Metadados no banco de dados
-
----
-
-### 6.10 Incidentes
-
-Voluntários podem reportar:
+Voluntarios podem reportar:
 
 - Risco
-- Bloqueio logístico
-- Falta crítica
-- Situação emergencial
+- Bloqueio logistico
+- Falta critica
+- Situacao emergencial
 
-Gestores classificam e encerram.
+Gestores classificam e encerram os incidentes.
 
 ---
 
-### 6.11 Geolocalização
+### 6.9 Geolocalizacao
 
-Captura automática quando relevante.
+Captura automatica quando relevante.
 
-Usada para:
+Usos principais:
 
-- Ofertas de doação
+- Origem da doacao
 - Entregas
-- Evidências
+- Evidencias
 - Incidentes
 
 ---
 
-### 6.12 Contato Telefônico
+### 6.10 Contato Telefonico
 
-- Obrigatório para logística
-- Comunicação externa ao sistema
-- Compartilhamento controlado por contexto
+- Obrigatorio para cenarios logisticos quando necessario
+- Comunicacao operacional ocorre fora da plataforma
+- Compartilhamento controlado por contexto e permissao
 
 ---
 
 ## 7. Auditoria e Logs
 
-Sistema deve registrar:
+O sistema deve registrar:
 
-- Todas as ações relevantes
-- Usuário responsável
+- Todas as acoes relevantes
+- Usuario responsavel
 - Timestamp
 - Entidade afetada
-- Estado anterior/posterior quando aplicável
+- Estado anterior e posterior quando aplicavel
 
-Logs são imutáveis (append-only).
+Logs devem ser append-only.
 
 ---
 
-## 8. Segurança e Privacidade
+## 8. Seguranca e Privacidade
 
-- Minimização de dados pessoais
-- Controle de acesso por função
-- Consentimento explícito para compartilhamento de telefone
+- Minimizacao de dados pessoais
+- Controle de acesso por papel
+- Consentimento explicito para compartilhamento de telefone
 - Conformidade com LGPD
+- Restricao de acesso conforme projeto e papel operacional
 
 ---
 
-## 9. Fora do Escopo (MVP)
+## 9. Fora do Escopo do MVP
 
-- Monetização
+- Monetizacao
 - Chat interno
-- Integração com WhatsApp
-- Vídeos ou áudios
-- Cadastro público de gestores
-- IA avançada
+- Integracao com WhatsApp
+- Videos ou audios
+- Cadastro publico de gestores
+- Roteirizacao inteligente completa
 - App nativo
 
 ---
 
-## 10. Critérios de Sucesso
+## 10. Criterios de Sucesso
 
-- Gestores conseguem coordenar operações reais
-- Voluntários conseguem assumir e concluir tarefas
-- Doações são rastreáveis do início ao fim
-- Sistema mantém estabilidade com infraestrutura mínima
-
+- Administradores Master conseguem abrir operacoes com governanca
+- Gestores conseguem cadastrar demandas e validar recebimentos
+- Doadores conseguem atender apenas necessidades reais do projeto
+- Voluntarios conseguem assumir e concluir entregas
+- Doacoes sao rastreaveis do inicio ao fim
+- O sistema se mantem operacional com infraestrutura minima
