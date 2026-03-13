@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Need {
@@ -80,7 +80,7 @@ const selectStyle = {
 };
 
 export default function NeedsTab({ projectId, canManage, userId }: NeedsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [needs, setNeeds] = useState<Need[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [loading, setLoading] = useState(true);

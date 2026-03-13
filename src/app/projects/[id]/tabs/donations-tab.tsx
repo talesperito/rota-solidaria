@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Donation {
@@ -85,8 +85,12 @@ const selectStyle = {
     color: "var(--color-text)",
 };
 
+function getCategoryLabel(category: string): string {
+    return CATEGORIES.find((item) => item.value === category)?.label ?? category;
+}
+
 export default function DonationsTab({ projectId, canManage, userId }: DonationsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [donations, setDonations] = useState<Donation[]>([]);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [needs, setNeeds] = useState<Need[]>([]);
@@ -141,6 +145,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         async function loadData() {
             await fetchData();
         }
+
         void loadData();
     }, [fetchData]);
 
@@ -180,17 +185,14 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
     }
 
     const selectedNeed = needs.find((need) => need.id === form.need_id) ?? null;
-
     const quantityValue = parseInt(form.quantity);
     const quantityIsValid = Number.isFinite(quantityValue) && quantityValue > 0;
     const withinAvailable = !!selectedNeed && quantityIsValid && quantityValue <= selectedNeed.quantity_available;
-
     const isFormReady =
         !!selectedNeed &&
         form.item_description.trim().length >= 2 &&
         quantityIsValid &&
-        withinAvailable &&
-        form.unit.trim().length > 0;
+        withinAvailable;
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -210,7 +212,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         }
 
         if (!withinAvailable) {
-            setError("Quantidade excede o saldo disponivel da demanda.");
+            setError(`Quantidade excede o saldo disponivel da demanda. Restam ${selectedNeed.quantity_available} ${selectedNeed.unit}.`);
             setSaving(false);
             return;
         }
@@ -221,7 +223,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
             category: selectedNeed.category,
             item_description: form.item_description.trim(),
             quantity: quantityValue,
-            unit: form.unit.trim(),
+            unit: selectedNeed.unit,
             approx_weight: form.approx_weight ? parseFloat(form.approx_weight) : null,
             need_id: selectedNeed.id,
             hub_id: form.hub_id || null,
@@ -230,7 +232,18 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
         });
 
         if (err) {
-            setError(`Erro ao registrar doacao: ${err.message}`);
+            const message = err.message.toLowerCase();
+
+            if (message.includes("ativa")) {
+                setError("Nao foi possivel registrar: a demanda nao esta mais ativa.");
+            } else if (message.includes("categoria")) {
+                setError(`Nao foi possivel registrar: a categoria deve ser "${getCategoryLabel(selectedNeed.category)}".`);
+            } else if (message.includes("excede") || message.includes("saldo") || message.includes("restam")) {
+                setError("Nao foi possivel registrar: a quantidade excede o saldo disponivel da demanda.");
+            } else {
+                setError(`Erro ao registrar doacao: ${err.message}`);
+            }
+
             console.error("[DONATION CREATE ERROR]", err);
         } else {
             setSuccess("Doacao registrada com sucesso.");
@@ -316,12 +329,12 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                                     onChange={(e) => {
                                         const needId = e.target.value;
                                         const pickedNeed = needs.find((need) => need.id === needId);
-                                        setForm({
-                                            ...form,
+                                        setForm((current) => ({
+                                            ...current,
                                             need_id: needId,
                                             category: pickedNeed?.category ?? EMPTY_FORM.category,
                                             unit: pickedNeed?.unit ?? EMPTY_FORM.unit,
-                                        });
+                                        }));
                                     }}
                                     style={selectStyle}
                                     required
@@ -371,7 +384,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                                 />
                                 {selectedNeed && (
                                     <small style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
-                                        Original: {selectedNeed.quantity_needed} {selectedNeed.unit}. Comprometido: {selectedNeed.quantity_committed} {selectedNeed.unit}. Disponivel: {selectedNeed.quantity_available} {selectedNeed.unit}. Recebido: {selectedNeed.quantity_received} {selectedNeed.unit}.
+                                        Original: {selectedNeed.quantity_needed} {selectedNeed.unit}. Comprometido: {selectedNeed.quantity_committed} {selectedNeed.unit}. Disponivel: {selectedNeed.quantity_available} {selectedNeed.unit}. Recebido: {selectedNeed.quantity_received} {selectedNeed.unit}. Restante: {selectedNeed.quantity_remaining} {selectedNeed.unit}.
                                     </small>
                                 )}
                             </div>
@@ -381,7 +394,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                                 <input
                                     type="text"
                                     placeholder="Unidade definida pelo gestor"
-                                    value={form.unit}
+                                    value={selectedNeed?.unit ?? form.unit}
                                     readOnly
                                     required
                                     style={{ background: "var(--color-surface-hover)", cursor: "not-allowed" }}
@@ -530,7 +543,7 @@ export default function DonationsTab({ projectId, canManage, userId }: Donations
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: "1rem", fontWeight: 600, margin: 0 }}>{donation.item_description}</h3>
                                     <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
-                                        <span>{CATEGORIES.find((category) => category.value === donation.category)?.label ?? donation.category}</span>
+                                        <span>{getCategoryLabel(donation.category)}</span>
                                         <span>{donation.quantity} {donation.unit}</span>
                                         {donation.approx_weight && <span>~{donation.approx_weight}kg</span>}
                                         {donation.needs && <span>Demanda: {donation.needs.title}</span>}

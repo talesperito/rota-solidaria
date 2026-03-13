@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Hub {
@@ -21,7 +21,7 @@ interface HubsTabProps {
 }
 
 export default function HubsTab({ projectId, canManage, userId }: HubsTabProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export default function HubsTab({ projectId, canManage, userId }: HubsTabProps) 
             setHubs(data ?? []);
         }
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, supabase]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect

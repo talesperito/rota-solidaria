@@ -46,6 +46,17 @@ Principais entidades:
 - audit_logs
 - evidence_files
 
+Regras operacionais de doações (MVP):
+
+- Toda doação deve estar vinculada a uma demanda ativa (`open` ou `in_progress`).
+- Não existe doação livre sem demanda.
+- A categoria da doação deve corresponder à categoria da demanda vinculada.
+- A quantidade doada não pode exceder o restante da demanda.
+- O status da demanda é recalculado automaticamente a partir das doações:
+  - `open`: sem doações válidas
+  - `in_progress`: com doações alocadas
+  - `fulfilled`: quando quantidade entregue cobre a demanda
+
 ---
 
 ## 4. Autenticação

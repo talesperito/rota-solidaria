@@ -1,50 +1,19 @@
 -- ============================================================
--- 007_donations.sql
--- Rota Solidária — Donations (Doações)
--- Run in Supabase SQL Editor BEFORE testing
+-- 012_donations_need_status_and_quantity.sql
+-- Rota Solidária — Enforce need quantity limits + auto-sync need status
+-- Run in Supabase SQL Editor AFTER 011_donations_require_active_need.sql
 -- ============================================================
 
--- 1. ENUM
-CREATE TYPE public.donation_status AS ENUM (
-  'offered',      -- doador ofereceu
-  'accepted',     -- gestor aceitou
-  'in_transit',   -- em transporte
-  'delivered',    -- entregue no hub
-  'cancelled'     -- cancelada
-);
+-- Recreate trigger/functions safely for existing environments.
+DROP TRIGGER IF EXISTS trg_validate_donation_need_limits ON public.donations;
+DROP TRIGGER IF EXISTS trg_sync_need_status_on_donation_change ON public.donations;
+DROP TRIGGER IF EXISTS trg_sync_need_status_on_donation_change_write ON public.donations;
+DROP TRIGGER IF EXISTS trg_sync_need_status_on_donation_change_delete ON public.donations;
 
--- 2. Table
-CREATE TABLE public.donations (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id       UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
-  need_id          UUID REFERENCES public.needs(id) ON DELETE SET NULL,
-  hub_id           UUID REFERENCES public.hubs(id) ON DELETE SET NULL,
-  donor_id         UUID NOT NULL REFERENCES public.user_profiles(id),
-  category         TEXT NOT NULL,
-  item_description TEXT NOT NULL CHECK (char_length(item_description) >= 2),
-  quantity         INTEGER NOT NULL CHECK (quantity > 0),
-  unit             TEXT NOT NULL DEFAULT 'unidades',
-  approx_weight    NUMERIC,
-  donor_lat        DOUBLE PRECISION,
-  donor_lng        DOUBLE PRECISION,
-  status           public.donation_status NOT NULL DEFAULT 'offered',
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+DROP FUNCTION IF EXISTS public.sync_need_status_on_donation_change();
+DROP FUNCTION IF EXISTS public.validate_donation_need_limits();
+DROP FUNCTION IF EXISTS public.recalculate_need_status_from_donations(UUID);
 
-COMMENT ON TABLE public.donations IS
-  'Doações oferecidas por membros do projeto. Cadeia de custódia rastreável.';
-
-CREATE TRIGGER set_donations_updated_at
-  BEFORE UPDATE ON public.donations
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- 3. Indexes
-CREATE INDEX idx_donations_project ON public.donations(project_id);
-CREATE INDEX idx_donations_donor ON public.donations(donor_id);
-CREATE INDEX idx_donations_status ON public.donations(project_id, status);
-
--- 4. Validation: enforce need limits and consistency
 CREATE OR REPLACE FUNCTION public.validate_donation_need_limits()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -109,7 +78,6 @@ CREATE TRIGGER trg_validate_donation_need_limits
   BEFORE INSERT OR UPDATE OF need_id, quantity, project_id ON public.donations
   FOR EACH ROW EXECUTE FUNCTION public.validate_donation_need_limits();
 
--- 5. Need status sync from donations
 CREATE OR REPLACE FUNCTION public.recalculate_need_status_from_donations(_need_id UUID)
 RETURNS void
 LANGUAGE plpgsql
@@ -185,76 +153,6 @@ CREATE TRIGGER trg_sync_need_status_on_donation_change_delete
   AFTER DELETE ON public.donations
   FOR EACH ROW EXECUTE FUNCTION public.sync_need_status_on_donation_change();
 
--- 6. RLS
-ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
-
--- 6.1 SELECT:
---   master: all
---   manager: all in project
---   donor: own in project
---   logistics_volunteer: offered/accepted/in_transit in project
-CREATE POLICY donations_select ON public.donations
-  FOR SELECT TO authenticated
-  USING (
-    public.is_master()
-    OR public.is_project_manager(project_id)
-    OR (public.is_project_member(project_id) AND donor_id = auth.uid())
-    OR (
-      status IN ('offered', 'accepted', 'in_transit')
-      AND EXISTS (
-        SELECT 1 FROM public.project_members pm
-        WHERE pm.project_id = donations.project_id
-          AND pm.user_id = auth.uid()
-          AND pm.role = 'logistics_volunteer'
-      )
-    )
-  );
-
--- 6.2 INSERT: only with active need in the same project (donor_id must be self)
-CREATE POLICY donations_insert ON public.donations
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    (public.is_master() OR public.is_project_member(project_id))
-    AND donor_id = auth.uid()
-    AND need_id IS NOT NULL
-    AND EXISTS (
-      SELECT 1
-      FROM public.needs n
-      WHERE n.id = donations.need_id
-        AND n.project_id = donations.project_id
-        AND n.status IN ('open'::public.need_status, 'in_progress'::public.need_status)
-    )
-  );
-
--- 6.3 UPDATE: manager/master can update (status changes etc.)
-CREATE POLICY donations_update_manager ON public.donations
-  FOR UPDATE TO authenticated
-  USING (
-    public.is_master()
-    OR public.is_project_manager(project_id)
-  )
-  WITH CHECK (
-    public.is_master()
-    OR public.is_project_manager(project_id)
-  );
-
--- 6.4 DELETE: manager/master only
-CREATE POLICY donations_delete_manager ON public.donations
-  FOR DELETE TO authenticated
-  USING (
-    public.is_master()
-    OR public.is_project_manager(project_id)
-  );
-
--- 7. Grants
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.donations TO authenticated;
-REVOKE ALL ON public.donations FROM anon;
-
--- 8. Audit
-CREATE TRIGGER audit_donations
-  AFTER INSERT OR UPDATE OR DELETE ON public.donations
-  FOR EACH ROW EXECUTE FUNCTION public.log_audit_event();
-
 -- ============================================================
--- END OF 007_donations.sql
+-- END OF 012_donations_need_status_and_quantity.sql
 -- ============================================================
